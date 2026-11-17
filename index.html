@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>電子書架</title>
+<style>
+  :root{--bg1:#1d3a2b;--bg2:#0b1a12;--accent:#f08a3c;--flip:1100ms}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;overflow:hidden;color:#fff;font-family:-apple-system,"PingFang TC","Noto Sans TC",sans-serif;
+    background:radial-gradient(ellipse at center,var(--bg1) 0%,var(--bg2) 100%);touch-action:manipulation}
+  body.idle{cursor:none}
+  button{font:inherit;color:#fff;background:rgba(255,255,255,.18);border:0;border-radius:999px;min-width:56px;height:48px;padding:0 20px;font-size:18px}
+  button:active{background:rgba(255,255,255,.35)}
+
+  /* ================= 書架 ================= */
+  #shelfView{position:fixed;inset:0;overflow:auto;display:flex;flex-direction:column;align-items:center;
+    padding:clamp(24px,5vh,64px) 24px;-webkit-overflow-scrolling:touch}
+  #shelfView h1{font-size:clamp(30px,4.2vw,56px);letter-spacing:.08em;text-align:center}
+  .sub{margin-top:10px;font-size:clamp(16px,1.8vw,24px);color:rgba(255,255,255,.7);text-align:center}
+  #books{margin-top:clamp(20px,4vh,56px);width:100%;max-width:1600px;display:flex;flex-wrap:wrap;gap:clamp(28px,4vw,64px);justify-content:center}
+  a.book{display:block;width:clamp(170px,min(24vw,31vh),520px);color:inherit;text-decoration:none;outline:none;transition:transform .25s;cursor:pointer}
+  a.book:hover,a.book:focus-visible{transform:translateY(-8px) scale(1.03)}
+  .cover{position:relative;aspect-ratio:.708;border-radius:4px 10px 10px 4px;overflow:hidden;background:#fff;
+    box-shadow:0 22px 50px rgba(0,0,0,.55),0 4px 12px rgba(0,0,0,.4)}
+  .cover img{width:100%;height:100%;object-fit:fill;display:block}
+  .cover::before{content:"";position:absolute;left:0;top:0;bottom:0;width:7%;
+    background:linear-gradient(90deg,rgba(0,0,0,.28),rgba(255,255,255,.14) 55%,transparent);z-index:1}
+  .meta{margin-top:20px;text-align:center}
+  .name{font-size:clamp(20px,2.1vw,30px);font-weight:700;line-height:1.3}
+  .desc{margin-top:6px;font-size:clamp(14px,1.4vw,19px);color:rgba(255,255,255,.7)}
+  .pages{display:inline-block;margin-top:12px;padding:6px 16px;border-radius:999px;background:rgba(240,138,60,.28);font-size:clamp(14px,1.3vw,18px)}
+  .go{display:block;margin:14px auto 0;padding:10px 26px;width:max-content;border-radius:999px;background:var(--accent);color:#1b1208;font-weight:700;font-size:clamp(16px,1.5vw,20px)}
+  #sfull{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:2}
+  .tip{margin-top:auto;padding-top:40px;color:rgba(255,255,255,.45);font-size:15px;text-align:center}
+
+  /* ================= 閱讀器（翻書） ================= */
+  #reader{display:none}
+  #wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  #book{position:relative;perspective:3200px;transition:transform var(--flip) cubic-bezier(.45,.05,.25,1)}
+  .slot,.leaf{position:absolute;top:0;height:100%;width:50%}
+  .slot{background:#fff;overflow:hidden}
+  #L{left:0;border-radius:6px 0 0 6px}
+  #R{left:50%;border-radius:0 6px 6px 0}
+  .slot img,.face img{width:100%;height:100%;display:block;object-fit:fill;user-select:none;-webkit-user-drag:none}
+  .slot.empty{visibility:hidden}
+  #shadow{position:absolute;inset:0;box-shadow:0 30px 70px rgba(0,0,0,.55),0 4px 14px rgba(0,0,0,.4);border-radius:6px;pointer-events:none}
+  #spine{position:absolute;left:50%;top:0;height:100%;width:8%;transform:translateX(-50%);pointer-events:none;z-index:4;
+    background:linear-gradient(90deg,transparent,rgba(0,0,0,.22) 47%,rgba(0,0,0,.34) 50%,rgba(0,0,0,.22) 53%,transparent)}
+  .leaf{z-index:3;display:none;transform-style:preserve-3d}
+  .leaf.fwd{left:50%;transform-origin:left center}
+  .leaf.bwd{left:0;transform-origin:right center}
+  .leaf.go{transition:transform var(--flip) cubic-bezier(.45,.05,.25,1)}
+  .face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:#fff;overflow:hidden}
+  .face.back{transform:rotateY(180deg)}
+  .face.empty{visibility:hidden}
+  .face::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:0;background:linear-gradient(90deg,rgba(0,0,0,.35),transparent 60%)}
+  .leaf.go .face::after{animation:shade var(--flip) ease-in-out}
+  @keyframes shade{0%{opacity:0}50%{opacity:1}100%{opacity:0}}
+
+  #bar{position:fixed;left:0;top:0;height:6px;width:100%;background:rgba(255,255,255,.12);z-index:8}
+  #bar i{display:block;height:100%;width:0;background:var(--accent)}
+  #ui{position:fixed;left:0;right:0;bottom:0;z-index:8;display:flex;align-items:center;justify-content:center;gap:14px;
+    padding:14px 16px calc(14px + env(safe-area-inset-bottom));background:linear-gradient(transparent,rgba(0,0,0,.6));transition:opacity .3s;
+    opacity:0;pointer-events:none}                       /* 預設完全隱藏 */
+  #ui.show{opacity:1;pointer-events:auto}
+  /* 角落的小按鈕：點一下展開工具列，再點一下收起 */
+  #more{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:9;min-width:0;width:56px;height:56px;padding:0;
+    font-size:26px;line-height:1;opacity:.35;background:rgba(0,0,0,.45);transition:opacity .3s}
+  #more:hover,#more.on{opacity:1}
+  #count{min-width:130px;text-align:center;font-size:18px;font-variant-numeric:tabular-nums}
+  #msg{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);padding:8px 18px;border-radius:999px;font-size:18px;opacity:0;transition:opacity .25s;z-index:9;pointer-events:none}
+  #msg.show{opacity:1}
+  #err{position:fixed;inset:0;display:none;align-items:center;justify-content:center;text-align:center;padding:24px;font-size:22px;z-index:20;background:var(--bg2)}
+  #fade{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:7;transition:opacity .5s}
+
+  /* 雙直式螢幕（視窗橫跨兩台，畫面接近正方形或直式） */
+  #title{display:none;position:fixed;top:3.5vh;left:0;right:0;text-align:center;z-index:4;pointer-events:none}
+  #title b{display:block;font-size:clamp(30px,3.6vw,76px);letter-spacing:.08em}
+  #title small{display:block;margin-top:.4em;font-size:clamp(18px,1.8vw,38px);color:rgba(255,255,255,.7)}
+  @media (max-aspect-ratio: 5/4){
+    #title{display:block}
+    #reader button{height:76px;min-width:96px;padding:0 30px;font-size:28px}
+    #count{font-size:28px;min-width:220px}
+    #ui{gap:24px;padding-top:24px;padding-bottom:calc(5vh + env(safe-area-inset-bottom))}
+    #bar{height:12px}
+    #reader #more{width:84px;height:84px;min-width:0;padding:0;font-size:40px;right:3vw;bottom:3vh}
+    #ptitle{font-size:34px}#toc button{height:64px;font-size:24px}
+    #grid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+  }
+
+  /* 目錄面板 */
+  #panel{position:fixed;inset:0;z-index:15;display:none;flex-direction:column;background:rgba(8,20,14,.94);backdrop-filter:blur(6px)}
+  #panel.open{display:flex}
+  #phead{display:flex;align-items:center;gap:14px;padding:18px 24px;border-bottom:1px solid rgba(255,255,255,.12)}
+  #ptitle{flex:1;font-size:24px;font-weight:700}
+  #pbody{flex:1;overflow:auto;padding:20px 24px 40px;-webkit-overflow-scrolling:touch}
+  #toc{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:24px}
+  #toc button{height:44px;font-size:17px;background:rgba(240,138,60,.25);white-space:pre}
+  #toc button:hover{background:rgba(240,138,60,.5)}
+  #grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:14px}
+  .th{position:relative;cursor:pointer;border-radius:6px;overflow:hidden;background:#fff;aspect-ratio:.708;outline:3px solid transparent}
+  .th img{width:100%;height:100%;object-fit:fill;display:block}
+  .th span{position:absolute;right:6px;bottom:6px;background:rgba(0,0,0,.65);font-size:13px;padding:2px 8px;border-radius:999px}
+  .th.cur{outline-color:var(--accent)}
+  .th:hover{outline-color:rgba(255,255,255,.6)}
+  .th.cur:hover{outline-color:var(--accent)}
+  #ptip{padding:0 24px 12px;color:rgba(255,255,255,.6);font-size:15px}
+</style>
+</head>
+<body>
+
+<!-- ============ 書架 ============ -->
+<div id="shelfView">
+  <h1>電子書架</h1>
+  <p class="sub">點選一本書開始閱讀，書頁會自動翻動</p>
+  <div id="books"></div>
+  <p class="tip">看書時：點左右翻頁、點中間暫停、☰ 目錄可跳頁、⌂ 書架可換別本書</p>
+  <button id="sfull" aria-label="全螢幕">⛶ 全螢幕</button>
+</div>
+
+<!-- ============ 閱讀器（和書架在同一個網頁，切換時不換頁，所以不會退出全螢幕） ============ -->
+<div id="reader">
+  <div id="bar"><i id="fill"></i></div>
+  <div id="wrap">
+    <div id="book">
+      <div id="shadow"></div>
+      <div id="L" class="slot"><img alt=""></div>
+      <div id="R" class="slot"><img alt=""></div>
+      <div id="spine"></div>
+      <div id="leaf" class="leaf">
+        <div class="face front"><img alt=""></div>
+        <div class="face back"><img alt=""></div>
+      </div>
+    </div>
+  </div>
+  <div id="title"><b></b><small></small></div>
+  <div id="fade"></div>
+  <div id="msg"></div>
+  <div id="panel">
+    <div id="phead">
+      <div id="ptitle"></div>
+      <button id="pclose" aria-label="關閉目錄">✕ 關閉</button>
+    </div>
+    <div id="ptip">點選章節或頁面縮圖，就會翻到那一頁</div>
+    <div id="pbody">
+      <div id="toc"></div>
+      <div id="grid"></div>
+    </div>
+  </div>
+  <button id="more" aria-label="顯示或隱藏工具列">⋯</button>
+  <div id="ui">
+    <button id="shelf" aria-label="回到書架">⌂ 書架</button>
+    <button id="menu" aria-label="開啟目錄">☰ 目錄</button>
+    <button id="prev" aria-label="上一頁">◀</button>
+    <button id="play" aria-label="播放或暫停">❚❚ 暫停</button>
+    <button id="next" aria-label="下一頁">▶</button>
+    <span id="count"></span>
+    <button id="full" aria-label="全螢幕">⛶</button>
+  </div>
+  <div id="err">圖片載入失敗，請確認 books 資料夾和 index.html 放在一起。</div>
+</div>
+
+<script src="books.js"></script>
+<script>
+(function(){
+  var q = new URLSearchParams(location.search);
+  /* ===== 可調整的設定 ===== */
+  var SECONDS = 5;            // 每次翻頁後停留秒數（也可用網址 ?sec=8 臨時改）
+  var FLIP_MS = 1100;         // 翻頁動畫時間（要和 CSS --flip 一致）
+  /* ======================== */
+  if (q.get('sec')) SECONDS = Math.max(1, parseFloat(q.get('sec')) || SECONDS);
+  if (q.get('flip')) FLIP_MS = Math.max(300, parseFloat(q.get('flip')) || FLIP_MS);   // ?flip=1500 可改翻頁速度
+  document.documentElement.style.setProperty('--flip', FLIP_MS + 'ms');
+
+  var $ = function(id){ return document.getElementById(id); };
+  var BOOKS = window.BOOKS || [];
+  var shelfView = $('shelfView'), reader = $('reader');
+  var book = $('book'), L = $('L'), R = $('R'), leaf = $('leaf'),
+      fill = $('fill'), count = $('count'), playBtn = $('play'),
+      ui = $('ui'), msg = $('msg'), fadeEl = $('fade'), panel = $('panel');
+  var Limg = L.querySelector('img'), Rimg = R.querySelector('img'),
+      Fimg = leaf.querySelector('.front img'), Bimg = leaf.querySelector('.back img');
+  var Fface = leaf.querySelector('.front'), Bface = leaf.querySelector('.back');
+
+  // 目前這本書的狀態（開書時重設）
+  var BOOK = null, TOTAL = 0, RATIO = 0.7, S = 1;
+  var s = 0, busy = false, playing = true, active = false, gen = 0;
+  var t0 = 0, pausedAt = 0, hideT = 0, idleT = 0;
+  var modal = false, modalAt = 0, built = false;
+  var keep = {}, keepOrder = [];
+
+  /* ---------- 全螢幕（書架和閱讀器共用，同一個網頁所以切換不會退出） ---------- */
+  function toggleFull(){
+    var d = document, el = d.documentElement;
+    if (d.fullscreenElement || d.webkitFullscreenElement){ (d.exitFullscreen || d.webkitExitFullscreen).call(d); }
+    else if (el.requestFullscreen || el.webkitRequestFullscreen){ (el.requestFullscreen || el.webkitRequestFullscreen).call(el); }
+  }
+  $('sfull').onclick = toggleFull;
+  $('full').onclick = function(e){ e.stopPropagation(); toggleFull(); };
+
+  /* ---------- 書架 ---------- */
+  BOOKS.forEach(function(b){
+    var a = document.createElement('a');
+    a.className = 'book'; a.href = '#' + encodeURIComponent(b.id);
+    a.innerHTML =
+      '<div class="cover"><img alt=""></div>' +
+      '<div class="meta"><div class="name"></div><div class="desc"></div>' +
+      '<span class="pages"></span><span class="go">開始閱讀</span></div>';
+    a.querySelector('img').src = 'books/' + b.id + '/pages/p001.jpg';
+    a.querySelector('img').alt = b.title + ' 封面';
+    a.querySelector('.name').textContent = b.title;
+    a.querySelector('.desc').textContent = b.subtitle || '';
+    a.querySelector('.pages').textContent = '共 ' + b.pages + ' 頁';
+    $('books').appendChild(a);
+  });
+
+  /* ---------- 路由：用網址 # 切換「書架 / 某一本書」，不會重新載入網頁 ---------- */
+  function route(){
+    var id = decodeURIComponent(location.hash.replace(/^#/, ''));
+    var b = BOOKS.filter(function(x){ return x.id === id; })[0];
+    if (b){ if (!active || !BOOK || BOOK.id !== b.id) openBook(b); }
+    else if (active) closeBook();
+  }
+  addEventListener('hashchange', route);
+
+  /* ---------- 工具 ---------- */
+  function pagesOf(k){
+    var l = (k >= 1 && 2 * k <= TOTAL) ? 2 * k : 0;
+    var r = (2 * k + 1 <= TOTAL) ? 2 * k + 1 : 0;
+    return {l: l, r: r};
+  }
+  function pad(p){ return String(p).padStart(3, '0'); }
+  function src(p){ return 'books/' + BOOK.id + '/pages/p' + pad(p) + '.jpg'; }
+  // 回傳 Promise：圖片解碼完成才算好，避免畫面上出現一格空白（閃爍）
+  function decoded(im){
+    try { return im.decode ? im.decode().catch(function(){}) : Promise.resolve(); } catch (e) { return Promise.resolve(); }
+  }
+  function setImg(img, box, p){
+    if (p){
+      if (img.getAttribute('src') !== src(p)) img.src = src(p);
+      box.classList.remove('empty');
+      return decoded(img);
+    }
+    img.removeAttribute('src'); box.classList.add('empty');
+    return Promise.resolve();
+  }
+  // 預先載入並解碼附近的頁面，留住最近 24 張
+  function warm(n){
+    if (!n) return Promise.resolve();
+    if (!keep[n]){
+      var im = new Image(); im.src = src(n); keep[n] = im; keepOrder.push(n);
+      if (keepOrder.length > 24){ delete keep[keepOrder.shift()]; }
+    }
+    return decoded(keep[n]);
+  }
+  function preloadSpread(k){
+    if (k < 0 || k >= S) return;
+    var p = pagesOf(k); warm(p.l); warm(p.r);
+  }
+  // 封面只有右頁、封底只有左頁時，把書本平移，讓單頁置中
+  function shiftFor(k){
+    var p = pagesOf(k);
+    if (!p.l && p.r) return '-25%';
+    if (p.l && !p.r) return '25%';
+    return '0';
+  }
+  function layout(){
+    if (!BOOK) return;
+    var W = innerWidth, H = innerHeight;
+    var tall = W / H < 1.25;                       // 雙直式螢幕：上下要留空間給書名和按鈕
+    var ph = Math.min(H * (tall ? 0.74 : 0.92), W * 0.98 / (2 * RATIO));
+    book.style.height = ph + 'px';
+    book.style.width = (2 * ph * RATIO) + 'px';
+  }
+  function updateCount(){
+    var p = pagesOf(s);
+    var txt = p.l && p.r ? (p.l + '–' + p.r) : (p.l || p.r);
+    count.textContent = '第 ' + txt + ' 頁 / ' + TOTAL;
+    try { localStorage.setItem('spread-' + BOOK.id, s); } catch (e) {}
+  }
+  function toast(t){ msg.textContent = t; msg.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(function(){ msg.classList.remove('show'); }, 900); }
+
+  /* ---------- 開書 / 關書 ---------- */
+  function openBook(b){
+    gen++;
+    BOOK = b; TOTAL = b.pages; RATIO = b.ratio; S = Math.floor(TOTAL / 2) + 1;
+    keep = {}; keepOrder = [];
+    busy = false; playing = true; pausedAt = 0; modal = false; built = false;
+    playBtn.textContent = '❚❚ 暫停';
+    panel.classList.remove('open'); $('toc').innerHTML = ''; $('toc').style.display = ''; $('grid').innerHTML = '';
+    leaf.style.display = 'none'; leaf.classList.remove('go'); fadeEl.style.opacity = 0; $('err').style.display = 'none';
+    $('title').querySelector('b').textContent = b.title;
+    $('title').querySelector('small').textContent = b.subtitle || '';
+    document.title = b.title + '｜翻書輪播';
+    shelfView.style.display = 'none'; reader.style.display = 'block'; active = true;
+    layout();
+    var start = 0;
+    try { if (!q.has('restart')) start = Math.min(S - 1, parseInt(localStorage.getItem('spread-' + b.id), 10) || 0); } catch (e) {}
+    book.style.transition = 'none'; renderStatic(start);
+    void book.offsetWidth; book.style.transition = '';
+    showUI(false); wake(); keepAwake();
+  }
+  function closeBook(){
+    gen++; active = false; busy = false; closePanelQuiet(); showUI(false);
+    reader.style.display = 'none'; shelfView.style.display = 'flex';
+    clearTimeout(hideT); clearTimeout(idleT); document.body.classList.remove('idle');
+    document.title = '電子書架';
+  }
+
+  function renderStatic(k){
+    var p = pagesOf(k);
+    var ready = Promise.all([setImg(Limg, L, p.l), setImg(Rimg, R, p.r)]);
+    book.style.transform = 'translateX(' + shiftFor(k) + ')';
+    s = k; updateCount();
+    preloadSpread(k + 1); preloadSpread(k + 2); preloadSpread(k - 1);
+    t0 = performance.now(); fill.style.width = '0';
+    return ready;
+  }
+
+  function flip(dir){
+    if (busy || !active) return;
+    var t = s + dir;
+    if (t < 0 || t >= S){ return wrap(t < 0 ? S - 1 : 0); }
+    busy = true; var g = gen;
+    var cur = pagesOf(s), nxt = pagesOf(t);
+    var underNext = dir > 0 ? nxt.r : nxt.l;           // 翻開後露出的那一頁
+    // 1) 葉片還藏著的時候，先把它正反面的圖準備好（解碼完成）
+    Promise.all([
+      dir > 0 ? setImg(Fimg, Fface, cur.r) : setImg(Fimg, Fface, cur.l),
+      dir > 0 ? setImg(Bimg, Bface, nxt.l) : setImg(Bimg, Bface, nxt.r),
+      warm(underNext)
+    ]).then(function(){
+      if (g !== gen) return;
+      // 2) 圖都好了才顯示葉片並開始翻
+      leaf.className = 'leaf ' + (dir > 0 ? 'fwd' : 'bwd');
+      leaf.style.transform = 'rotateY(0deg)';
+      leaf.style.display = 'block';
+      if (dir > 0) setImg(Rimg, R, nxt.r); else setImg(Limg, L, nxt.l);   // 此時被葉片完全蓋住
+      void leaf.offsetWidth;                 // 強制重排，讓動畫從 0 度開始
+      leaf.classList.add('go');
+      leaf.style.transform = 'rotateY(' + (dir > 0 ? -180 : 180) + 'deg)';
+      book.style.transform = 'translateX(' + shiftFor(t) + ')';
+      setTimeout(function(){
+        if (g !== gen) return;
+        // 3) 葉片落地後，先把另一側底層換成新頁並等它解碼好，再收起葉片
+        Promise.all([setImg(Limg, L, nxt.l), setImg(Rimg, R, nxt.r)]).then(function(){
+          if (g !== gen) return;
+          leaf.style.display = 'none'; leaf.classList.remove('go');
+          s = t; updateCount(); busy = false;
+          preloadSpread(t + 1); preloadSpread(t + 2); preloadSpread(t - 1);
+          t0 = performance.now(); fill.style.width = '0';
+        });
+      }, FLIP_MS + 60);
+    });
+  }
+  function wrap(k){           // 首尾相接、或從目錄跳頁時用淡出淡入，避免倒翻很多頁
+    if (busy) return; busy = true; var g = gen;
+    fadeEl.style.opacity = 1;
+    setTimeout(function(){
+      if (g !== gen) return;
+      renderStatic(k).then(function(){            // 新頁解碼好才淡入，避免閃一下
+        if (g !== gen) return;
+        fadeEl.style.opacity = 0;
+        setTimeout(function(){ if (g !== gen) return; busy = false; t0 = performance.now(); }, 500);
+      });
+    }, 520);
+  }
+
+  function tick(now){
+    if (active && playing && !busy && !modal){
+      var p = (now - t0) / (SECONDS * 1000);
+      if (p >= 1) flip(1); else fill.style.width = (p * 100) + '%';
+    }
+    requestAnimationFrame(tick);
+  }
+  function setPlaying(v){
+    if (v === playing) return;
+    playing = v;
+    if (v){ t0 = performance.now() - pausedAt; }
+    else { pausedAt = performance.now() - t0; }
+    playBtn.textContent = v ? '❚❚ 暫停' : '▶ 播放';
+    toast(v ? '播放中' : '已暫停'); wake();
+  }
+  function manual(d){ if (!active || modal) return; flip(d); wake(); }
+
+  /* ---------- 目錄面板：章節 + 頁面縮圖，點選就跳頁 ---------- */
+  function spreadOf(p){ return Math.min(S - 1, Math.floor(p / 2)); }
+  function buildPanel(){
+    built = true;
+    $('ptitle').textContent = BOOK.title + (BOOK.subtitle ? '　' + BOOK.subtitle : '');
+    var toc = $('toc');
+    (BOOK.toc || []).forEach(function(c){
+      var b = document.createElement('button'); b.textContent = c.t;
+      b.onclick = function(){ jump(c.p); }; toc.appendChild(b);
+    });
+    if (!(BOOK.toc || []).length) toc.style.display = 'none';
+    var g = $('grid');
+    for (var n = 1; n <= TOTAL; n++){
+      (function(n){
+        var d = document.createElement('div'); d.className = 'th'; d.dataset.p = n;
+        var im = new Image(); im.loading = 'lazy'; im.alt = '第 ' + n + ' 頁';
+        im.src = 'books/' + BOOK.id + '/thumbs/p' + pad(n) + '.jpg';
+        var sp = document.createElement('span'); sp.textContent = n;
+        d.appendChild(im); d.appendChild(sp);
+        d.onclick = function(){ jump(n); };
+        g.appendChild(d);
+      })(n);
+    }
+  }
+  function markCurrent(){
+    var p = pagesOf(s);
+    Array.prototype.forEach.call($('grid').children, function(el){
+      var n = +el.dataset.p; el.classList.toggle('cur', n === p.l || n === p.r);
+    });
+  }
+  function openPanel(){
+    if (modal || !active) return;
+    if (!built) buildPanel();
+    modal = true; modalAt = performance.now();
+    markCurrent(); panel.classList.add('open');
+    var cur = $('grid').querySelector('.cur'); if (cur) cur.scrollIntoView({block:'center'});
+  }
+  function closePanel(){
+    if (!modal) return;
+    modal = false; t0 += performance.now() - modalAt;     // 開著目錄的時間不算進停留秒數
+    panel.classList.remove('open');
+  }
+  function closePanelQuiet(){ modal = false; panel.classList.remove('open'); }
+  function jump(p){ closePanel(); var k = spreadOf(p); if (k !== s) wrap(k); }
+
+  $('menu').onclick = function(e){ e.stopPropagation(); openPanel(); };
+  $('pclose').onclick = function(e){ e.stopPropagation(); closePanel(); };
+  $('shelf').onclick = function(e){ e.stopPropagation(); location.hash = ''; };   // 回書架（不換頁）
+  $('prev').onclick = function(e){ e.stopPropagation(); manual(-1); };
+  $('next').onclick = function(e){ e.stopPropagation(); manual(1); };
+  playBtn.onclick = function(e){ e.stopPropagation(); setPlaying(!playing); };
+
+  // 點畫面左 1/4 上一頁、右 1/4 下一頁、中間暫停/播放；觸控可左右滑動
+  var sx = 0, sy = 0;
+  document.addEventListener('touchstart', function(e){ sx = e.touches[0].clientX; sy = e.touches[0].clientY; if (active) wake(); }, {passive:true});
+  document.addEventListener('touchend', function(e){
+    if (!active || modal) return;
+    var dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)){ manual(dx < 0 ? 1 : -1); e.preventDefault(); }
+  }, {passive:false});
+  $('wrap').addEventListener('click', function(e){
+    if (!active || modal) return;
+    var x = e.clientX / innerWidth;
+    if (x < .25) manual(-1); else if (x > .75) manual(1); else setPlaying(!playing);
+  });
+  document.addEventListener('keydown', function(e){
+    if (!active){                              // 書架：數字鍵直接開書
+      var n = parseInt(e.key, 10);
+      if (n >= 1 && n <= BOOKS.length) location.hash = BOOKS[n - 1].id;
+      else if (e.key === 'f' || e.key === 'F') toggleFull();
+      return;
+    }
+    if (e.key === 'ArrowRight' || e.key === 'PageDown') manual(1);
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') manual(-1);
+    else if (e.key === ' '){ e.preventDefault(); setPlaying(!playing); }
+    else if (e.key === 'f' || e.key === 'F') toggleFull();
+    else if (e.key === 't' || e.key === 'T' || e.key === 'm' || e.key === 'M') { modal ? closePanel() : openPanel(); }
+    else if (e.key === 'Escape') closePanel();
+    else if (e.key === 'b' || e.key === 'B') location.hash = '';
+    else if (e.key === 'Home') { if (!busy) renderStatic(0); }
+    wake();
+  });
+
+  // 工具列預設隱藏：點角落的 ⋯ 展開，再點收起；展開後 8 秒沒操作也會自動收起
+  function showUI(v){
+    ui.classList.toggle('show', v); $('more').classList.toggle('on', v);
+    clearTimeout(hideT);
+    if (v) hideT = setTimeout(function(){ showUI(false); }, 8000);
+  }
+  // 滑鼠游標 3 秒沒動就隱藏（大螢幕展示用）；工具列展開時有操作就重新計時
+  function wake(){
+    if (!active) return;
+    document.body.classList.remove('idle');
+    clearTimeout(idleT); idleT = setTimeout(function(){ document.body.classList.add('idle'); }, 3000);
+    if (ui.classList.contains('show')) showUI(true);
+  }
+  $('more').onclick = function(e){ e.stopPropagation(); showUI(!ui.classList.contains('show')); };
+  document.addEventListener('mousemove', wake);
+
+  // 盡量讓螢幕不休眠
+  function keepAwake(){ try { if (navigator.wakeLock) navigator.wakeLock.request('screen').catch(function(){}); } catch (e) {} }
+  document.addEventListener('visibilitychange', function(){ if (!document.hidden && active) keepAwake(); });
+
+  Limg.onerror = Rimg.onerror = function(){ if (active) $('err').style.display = 'flex'; };
+  addEventListener('resize', layout);
+
+  requestAnimationFrame(tick);
+  route();                                    // 依網址決定一開始是書架還是某本書
+})();
+</script>
+</body>
+</html>
