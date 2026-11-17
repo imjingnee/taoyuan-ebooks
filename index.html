@@ -4,13 +4,21 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <title>電子書架</title>
+<!-- iPad「加入主畫面」後，從主畫面圖示開啟就是沒有 Safari 網址列的全螢幕 -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="電子書架">
+<meta name="theme-color" content="#0b1a12">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
   :root{--bg1:#1d3a2b;--bg2:#0b1a12;--accent:#f08a3c;--flip:1100ms}
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
   html,body{height:100%;overflow:hidden;color:#fff;font-family:-apple-system,"PingFang TC","Noto Sans TC",sans-serif;
     background:radial-gradient(ellipse at center,var(--bg1) 0%,var(--bg2) 100%);touch-action:manipulation}
   body.idle{cursor:none}
-  button{font:inherit;color:#fff;background:rgba(255,255,255,.18);border:0;border-radius:999px;min-width:56px;height:48px;padding:0 20px;font-size:18px}
+  button{font:inherit;color:#fff;background:rgba(255,255,255,.18);border:0;border-radius:999px;min-width:56px;height:48px;padding:0 20px;font-size:18px;white-space:nowrap;flex:0 0 auto}
   button:active{background:rgba(255,255,255,.35)}
 
   /* ================= 書架 ================= */
@@ -47,7 +55,7 @@
   #shadow{position:absolute;inset:0;box-shadow:0 30px 70px rgba(0,0,0,.55),0 4px 14px rgba(0,0,0,.4);border-radius:6px;pointer-events:none}
   #spine{position:absolute;left:50%;top:0;height:100%;width:8%;transform:translateX(-50%);pointer-events:none;z-index:4;
     background:linear-gradient(90deg,transparent,rgba(0,0,0,.22) 47%,rgba(0,0,0,.34) 50%,rgba(0,0,0,.22) 53%,transparent)}
-  .leaf{z-index:3;display:none;transform-style:preserve-3d}
+  .leaf{z-index:3;display:none;transform-style:preserve-3d;will-change:transform}
   .leaf.fwd{left:50%;transform-origin:left center}
   .leaf.bwd{left:0;transform-origin:right center}
   .leaf.go{transition:transform var(--flip) cubic-bezier(.45,.05,.25,1)}
@@ -55,12 +63,11 @@
   .face.back{transform:rotateY(180deg)}
   .face.empty{visibility:hidden}
   .face::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:0;background:linear-gradient(90deg,rgba(0,0,0,.35),transparent 60%)}
-  .leaf.go .face::after{animation:shade var(--flip) ease-in-out}
-  @keyframes shade{0%{opacity:0}50%{opacity:1}100%{opacity:0}}
+  /* 翻動時的明暗動畫在 iPad Safari 上容易造成殘影和閃爍，所以拿掉 */
 
   #bar{position:fixed;left:0;top:0;height:6px;width:100%;background:rgba(255,255,255,.12);z-index:8}
   #bar i{display:block;height:100%;width:0;background:var(--accent)}
-  #ui{position:fixed;left:0;right:0;bottom:0;z-index:8;display:flex;align-items:center;justify-content:center;gap:14px;
+  #ui{position:fixed;left:0;right:0;bottom:0;z-index:8;display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;row-gap:10px;
     padding:14px 16px calc(14px + env(safe-area-inset-bottom));background:linear-gradient(transparent,rgba(0,0,0,.6));transition:opacity .3s;
     opacity:0;pointer-events:none}                       /* 預設完全隱藏 */
   #ui.show{opacity:1;pointer-events:auto}
@@ -68,7 +75,7 @@
   #more{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:9;min-width:0;width:56px;height:56px;padding:0;
     font-size:26px;line-height:1;opacity:.35;background:rgba(0,0,0,.45);transition:opacity .3s}
   #more:hover,#more.on{opacity:1}
-  #count{min-width:130px;text-align:center;font-size:18px;font-variant-numeric:tabular-nums}
+  #count{min-width:130px;text-align:center;font-size:18px;font-variant-numeric:tabular-nums;white-space:nowrap}
   #msg{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);padding:8px 18px;border-radius:999px;font-size:18px;opacity:0;transition:opacity .25s;z-index:9;pointer-events:none}
   #msg.show{opacity:1}
   #err{position:fixed;inset:0;display:none;align-items:center;justify-content:center;text-align:center;padding:24px;font-size:22px;z-index:20;background:var(--bg2)}
@@ -78,7 +85,7 @@
   #title{display:none;position:fixed;top:3.5vh;left:0;right:0;text-align:center;z-index:4;pointer-events:none}
   #title b{display:block;font-size:clamp(30px,3.6vw,76px);letter-spacing:.08em}
   #title small{display:block;margin-top:.4em;font-size:clamp(18px,1.8vw,38px);color:rgba(255,255,255,.7)}
-  @media (max-aspect-ratio: 5/4){
+  @media (max-aspect-ratio: 5/4) and (min-width: 1400px){      /* 只有很寬的雙直式螢幕才用大尺寸，平板不會誤用 */
     #title{display:block}
     #reader button{height:76px;min-width:96px;padding:0 30px;font-size:28px}
     #count{font-size:28px;min-width:220px}
@@ -166,7 +173,7 @@
 (function(){
   var q = new URLSearchParams(location.search);
   /* ===== 可調整的設定 ===== */
-  var SECONDS = 5;            // 每次翻頁後停留秒數（也可用網址 ?sec=8 臨時改）
+  var SECONDS = 3;            // 每次翻頁後停留秒數（也可用網址 ?sec=5 臨時改）
   var FLIP_MS = 1100;         // 翻頁動畫時間（要和 CSS --flip 一致）
   /* ======================== */
   if (q.get('sec')) SECONDS = Math.max(1, parseFloat(q.get('sec')) || SECONDS);
@@ -195,6 +202,11 @@
     var d = document, el = d.documentElement;
     if (d.fullscreenElement || d.webkitFullscreenElement){ (d.exitFullscreen || d.webkitExitFullscreen).call(d); }
     else if (el.requestFullscreen || el.webkitRequestFullscreen){ (el.requestFullscreen || el.webkitRequestFullscreen).call(el); }
+    else { alert('這個瀏覽器不支援網頁全螢幕。\n\niPad：點 Safari 的「分享」→「加入主畫面」，之後從主畫面的圖示開啟，就是沒有網址列的全螢幕。'); }
+  }
+  // 已經是從主畫面開啟的全螢幕 App 時，不需要全螢幕按鈕
+  if (navigator.standalone || (window.matchMedia && matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches)){
+    $('sfull').style.display = 'none'; $('full').style.display = 'none';
   }
   $('sfull').onclick = toggleFull;
   $('full').onclick = function(e){ e.stopPropagation(); toggleFull(); };
@@ -233,8 +245,11 @@
   function pad(p){ return String(p).padStart(3, '0'); }
   function src(p){ return 'books/' + BOOK.id + '/pages/p' + pad(p) + '.jpg'; }
   // 回傳 Promise：圖片解碼完成才算好，避免畫面上出現一格空白（閃爍）
+  // 最多等 0.7 秒：萬一某台裝置的解碼一直沒回應，也不會讓整本書卡住
   function decoded(im){
-    try { return im.decode ? im.decode().catch(function(){}) : Promise.resolve(); } catch (e) { return Promise.resolve(); }
+    var p;
+    try { p = im.decode ? im.decode().catch(function(){}) : Promise.resolve(); } catch (e) { p = Promise.resolve(); }
+    return Promise.race([p, new Promise(function(r){ setTimeout(r, 700); })]);
   }
   function setImg(img, box, p){
     if (p){
@@ -268,7 +283,7 @@
   function layout(){
     if (!BOOK) return;
     var W = innerWidth, H = innerHeight;
-    var tall = W / H < 1.25;                       // 雙直式螢幕：上下要留空間給書名和按鈕
+    var tall = W / H < 1.25 && W >= 1400;                  // 雙直式螢幕：上下要留空間給書名和按鈕
     var ph = Math.min(H * (tall ? 0.74 : 0.92), W * 0.98 / (2 * RATIO));
     book.style.height = ph + 'px';
     book.style.width = (2 * ph * RATIO) + 'px';
@@ -318,6 +333,16 @@
     return ready;
   }
 
+  // 等瀏覽器真的畫出 n 個畫面（避免在 Safari 上換圖和顯示葉片差一格造成閃爍）；背景分頁不畫圖時用計時器保底
+  function frames(n){
+    return new Promise(function(res){
+      var c = 0;
+      function step(){ if (++c >= n) res(); else requestAnimationFrame(step); }
+      requestAnimationFrame(step);
+      setTimeout(res, 120 * n);
+    });
+  }
+
   function flip(dir){
     if (busy || !active) return;
     var t = s + dir;
@@ -332,26 +357,30 @@
       warm(underNext)
     ]).then(function(){
       if (g !== gen) return;
-      // 2) 圖都好了才顯示葉片並開始翻
+      // 2) 先顯示葉片（內容和底下一樣，看不出變化），等它真的畫出來，再換被蓋住的底層，最後才開始翻
       leaf.className = 'leaf ' + (dir > 0 ? 'fwd' : 'bwd');
       leaf.style.transform = 'rotateY(0deg)';
       leaf.style.display = 'block';
-      if (dir > 0) setImg(Rimg, R, nxt.r); else setImg(Limg, L, nxt.l);   // 此時被葉片完全蓋住
-      void leaf.offsetWidth;                 // 強制重排，讓動畫從 0 度開始
-      leaf.classList.add('go');
-      leaf.style.transform = 'rotateY(' + (dir > 0 ? -180 : 180) + 'deg)';
-      book.style.transform = 'translateX(' + shiftFor(t) + ')';
-      setTimeout(function(){
+      frames(2).then(function(){
         if (g !== gen) return;
-        // 3) 葉片落地後，先把另一側底層換成新頁並等它解碼好，再收起葉片
-        Promise.all([setImg(Limg, L, nxt.l), setImg(Rimg, R, nxt.r)]).then(function(){
+        return dir > 0 ? setImg(Rimg, R, nxt.r) : setImg(Limg, L, nxt.l);   // 此時被葉片完全蓋住
+      }).then(function(){ return frames(2); }).then(function(){
+        if (g !== gen) return;
+        leaf.classList.add('go');
+        leaf.style.transform = 'rotateY(' + (dir > 0 ? -180 : 180) + 'deg)';
+        book.style.transform = 'translateX(' + shiftFor(t) + ')';
+        setTimeout(function(){
           if (g !== gen) return;
-          leaf.style.display = 'none'; leaf.classList.remove('go');
-          s = t; updateCount(); busy = false;
-          preloadSpread(t + 1); preloadSpread(t + 2); preloadSpread(t - 1);
-          t0 = performance.now(); fill.style.width = '0';
-        });
-      }, FLIP_MS + 60);
+          // 3) 葉片落地後，先把另一側底層換成新頁、等它解碼並畫出來，再收起葉片
+          Promise.all([setImg(Limg, L, nxt.l), setImg(Rimg, R, nxt.r)]).then(function(){ return frames(2); }).then(function(){
+            if (g !== gen) return;
+            leaf.style.display = 'none'; leaf.classList.remove('go');
+            s = t; updateCount(); busy = false;
+            preloadSpread(t + 1); preloadSpread(t + 2); preloadSpread(t - 1);
+            t0 = performance.now(); fill.style.width = '0';
+          });
+        }, FLIP_MS + 60);
+      });
     });
   }
   function wrap(k){           // 首尾相接、或從目錄跳頁時用淡出淡入，避免倒翻很多頁
@@ -367,13 +396,14 @@
     }, 520);
   }
 
-  function tick(now){
+  function check(now){
     if (active && playing && !busy && !modal){
       var p = (now - t0) / (SECONDS * 1000);
       if (p >= 1) flip(1); else fill.style.width = (p * 100) + '%';
     }
-    requestAnimationFrame(tick);
   }
+  function tick(now){ check(now); requestAnimationFrame(tick); }
+  setInterval(function(){ check(performance.now()); }, 200);   // 備援：畫面計時被節流時，仍會自動翻頁
   function setPlaying(v){
     if (v === playing) return;
     playing = v;
