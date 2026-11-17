@@ -9,14 +9,14 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="電子書架">
-<meta name="theme-color" content="#ffffff">
+<meta name="theme-color" content="#f1f1ef">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
-  :root{--fg:#1b1b1b;--muted:rgba(0,0,0,.6);--btn:rgba(0,0,0,.08);--btn-on:rgba(0,0,0,.18);--accent:#f08a3c;--flip:1100ms}
+  :root{--bg:#f1f1ef;--fg:#1b1b1b;--muted:rgba(0,0,0,.6);--btn:rgba(0,0,0,.08);--btn-on:rgba(0,0,0,.18);--accent:#f08a3c;--flip:1100ms}
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
   html,body{height:100%;overflow:hidden;color:var(--fg);font-family:-apple-system,"PingFang TC","Noto Sans TC",sans-serif;
-    background:#fff;touch-action:manipulation}
+    background:var(--bg);touch-action:manipulation}
   body.idle{cursor:none}
   button{font:inherit;color:var(--fg);background:var(--btn);border:0;border-radius:999px;min-width:56px;height:48px;padding:0 20px;font-size:18px;white-space:nowrap;flex:0 0 auto}
   button:active{background:var(--btn-on)}
@@ -68,7 +68,7 @@
   #bar{position:fixed;left:0;top:0;height:6px;width:100%;background:rgba(0,0,0,.08);z-index:8}
   #bar i{display:block;height:100%;width:0;background:var(--accent)}
   #ui{position:fixed;left:0;right:0;bottom:0;z-index:8;display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;row-gap:10px;
-    padding:14px 16px calc(14px + env(safe-area-inset-bottom));background:linear-gradient(transparent,rgba(255,255,255,.92));transition:opacity .3s;
+    padding:14px 16px calc(14px + env(safe-area-inset-bottom));background:linear-gradient(transparent,rgba(241,241,239,.92));transition:opacity .3s;
     opacity:0;pointer-events:none}                       /* 預設完全隱藏 */
   #ui.show{opacity:1;pointer-events:auto}
   /* 角落的小按鈕：點一下展開工具列，再點一下收起 */
@@ -78,8 +78,8 @@
   #count{min-width:130px;text-align:center;font-size:18px;font-variant-numeric:tabular-nums;white-space:nowrap}
   #msg{color:#fff;position:fixed;top:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);padding:8px 18px;border-radius:999px;font-size:18px;opacity:0;transition:opacity .25s;z-index:9;pointer-events:none}
   #msg.show{opacity:1}
-  #err{position:fixed;inset:0;display:none;align-items:center;justify-content:center;text-align:center;padding:24px;font-size:22px;z-index:20;background:#fff}
-  #fade{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:7;transition:opacity .5s}
+  #err{position:fixed;inset:0;display:none;align-items:center;justify-content:center;text-align:center;padding:24px;font-size:22px;z-index:20;background:var(--bg)}
+  #fade{position:fixed;inset:0;background:var(--bg);opacity:0;pointer-events:none;z-index:7;transition:opacity .5s}
 
   /* 雙直式螢幕（視窗橫跨兩台，畫面接近正方形或直式） */
   #title{display:none;position:fixed;top:3.5vh;left:0;right:0;text-align:center;z-index:4;pointer-events:none}
@@ -97,7 +97,7 @@
   }
 
   /* 目錄面板 */
-  #panel{position:fixed;inset:0;z-index:15;display:none;flex-direction:column;background:rgba(255,255,255,.97);backdrop-filter:blur(6px)}
+  #panel{position:fixed;inset:0;z-index:15;display:none;flex-direction:column;background:rgba(241,241,239,.97);backdrop-filter:blur(6px)}
   #panel.open{display:flex}
   #phead{display:flex;align-items:center;gap:14px;padding:18px 24px;border-bottom:1px solid rgba(0,0,0,.12)}
   #ptitle{flex:1;font-size:24px;font-weight:700}
