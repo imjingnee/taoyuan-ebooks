@@ -26,26 +26,16 @@
     padding:clamp(24px,5vh,64px) 24px;-webkit-overflow-scrolling:touch}
   #shelfView h1{font-size:clamp(30px,4.2vw,56px);letter-spacing:.08em;text-align:center}
   .sub{margin-top:10px;font-size:clamp(16px,1.8vw,24px);color:var(--muted);text-align:center}
-  /* 書櫃：木框、層板、書立在層板上，書名貼在層板下方 */
-  #books{--w:240px;margin-top:clamp(16px,3vh,40px);width:min(100%,1400px);padding:18px;border-radius:14px;
-    background:linear-gradient(90deg,#b98550,#a9763f 4%,#b98550 8%,#b07b45 50%,#b98550 92%,#a9763f 96%,#b98550);
-    box-shadow:0 24px 50px rgba(0,0,0,.28),inset 0 2px 0 rgba(255,255,255,.25)}
-  .case{border-radius:6px;overflow:hidden;background:linear-gradient(#e9e1d4,#d9cfbe);
-    box-shadow:inset 0 16px 24px rgba(0,0,0,.28),inset 12px 0 20px rgba(0,0,0,.14),inset -12px 0 20px rgba(0,0,0,.14)}
-  .row{display:grid;grid-template-columns:1fr repeat(var(--n),calc(var(--w) + 40px)) 1fr;
-    grid-template-rows:auto auto auto;padding:34px 0 0}
-  .row.empty{grid-template-columns:1fr;padding-top:84px}
-  .stand{margin:0 20px;align-self:end;display:block;color:inherit;text-decoration:none;outline:none;transition:transform .25s;cursor:pointer}
-  .stand:hover,.stand:focus-visible{transform:translateY(-8px)}
+  /* 空白背景：書平放在畫面上，書名貼在下方 */
+  #books{--w:240px;margin-top:clamp(24px,5vh,56px);width:min(100%,1400px);display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;gap:48px 56px}
+  .item{width:var(--w);display:block;color:inherit;text-decoration:none;outline:none;cursor:pointer;text-align:center;transition:transform .25s}
+  .item:hover,.item:focus-visible{transform:translateY(-6px)}
   .cover{position:relative;aspect-ratio:.708;border-radius:3px 8px 8px 3px;overflow:hidden;background:#fff;
     box-shadow:0 14px 24px rgba(0,0,0,.4),0 2px 6px rgba(0,0,0,.35)}
   .cover img{width:100%;height:100%;object-fit:fill;display:block}
   .cover::before{content:"";position:absolute;left:0;top:0;bottom:0;width:7%;
     background:linear-gradient(90deg,rgba(0,0,0,.28),rgba(255,255,255,.14) 55%,transparent);z-index:1}
-  .plank{grid-row:2;grid-column:1/-1;height:22px;background:linear-gradient(#d8a468,#b27a40 55%,#8f5f2e);
-    box-shadow:0 8px 12px rgba(0,0,0,.3),inset 0 2px 0 rgba(255,255,255,.35)}
-  .plate{margin:0 20px;display:block;grid-row:3;text-align:center;color:inherit;text-decoration:none;padding:16px 0 28px;cursor:pointer}
-  .plate:hover .name{text-decoration:underline}
+  .item .name{margin-top:18px}
   .name{font-size:clamp(18px,1.9vw,28px);font-weight:700;line-height:1.3}
   .desc{margin-top:6px;font-size:clamp(13px,1.3vw,18px);color:var(--muted)}
   .pages{display:inline-block;margin-top:10px;padding:5px 14px;border-radius:999px;background:rgba(240,138,60,.28);font-size:clamp(13px,1.2vw,17px)}
@@ -56,7 +46,7 @@
   /* ================= 閱讀器（翻書） ================= */
   #reader{display:none}
   #wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
-  #book{position:relative;perspective:3200px;transition:transform var(--flip) cubic-bezier(.45,.05,.25,1)}
+  #book{flex:none;position:relative;perspective:3200px;transition:transform var(--flip) cubic-bezier(.45,.05,.25,1)}
   .slot,.leaf{position:absolute;top:0;height:100%;width:50%}
   .slot{background:#fff;overflow:hidden}
   #L{left:0;border-radius:6px 0 0 6px}
@@ -202,7 +192,7 @@
   var Fface = leaf.querySelector('.front'), Bface = leaf.querySelector('.back');
 
   // 目前這本書的狀態（開書時重設）
-  var BOOK = null, TOTAL = 0, RATIO = 0.7, S = 1;
+  var BOOK = null, TOTAL = 0, RATIO = 0.7, S = 1, SINGLE = false;
   var s = 0, busy = false, playing = true, active = false, gen = 0;
   var t0 = 0, pausedAt = 0, hideT = 0, idleT = 0;
   var modal = false, modalAt = 0, built = false;
@@ -226,39 +216,20 @@
   function renderShelf(){
     var box = $('books'); box.innerHTML = '';
     var W = innerWidth, H = innerHeight;
-    var w = Math.max(150, Math.min(0.2 * W, 0.30 * H, 380)), gap = 40;
-    var avail = Math.min(W - 48, 1400) - 36 - 40;
-    var per = Math.max(1, Math.min(4, Math.floor((avail + gap) / (w + gap))));
-    box.style.setProperty('--w', w + 'px');
-    var cs = document.createElement('div'); cs.className = 'case'; box.appendChild(cs);
-    var rows = Math.max(2, Math.ceil(BOOKS.length / per));        // 至少兩層，空的那層留給之後新增的書
-    for (var r = 0; r < rows; r++){
-      var row = document.createElement('div'); row.className = 'row';
-      var items = BOOKS.slice(r * per, r * per + per);
-      if (!items.length){
-        row.className += ' empty';
-        row.innerHTML = '<div class="plank"></div><div style="grid-row:3;height:30px"></div>';
-        cs.appendChild(row); continue;
-      }
-      row.style.setProperty('--n', items.length);
-      items.forEach(function(b, i){
-        var href = '#' + encodeURIComponent(b.id);
-        var st = document.createElement('a'); st.className = 'stand'; st.href = href;
-        st.style.cssText = 'grid-row:1;grid-column:' + (i + 2);
-        st.innerHTML = '<div class="cover"><img alt=""></div>';
-        var im = st.querySelector('img'); im.src = 'books/' + b.id + '/pages/p001.jpg'; im.alt = b.title + ' 封面';
-        var pl = document.createElement('a'); pl.className = 'plate'; pl.href = href;
-        pl.style.cssText = 'grid-column:' + (i + 2);
-        pl.innerHTML = '<div class="name"></div><div class="desc"></div><span class="pages"></span><span class="go">開始閱讀</span>';
-        pl.querySelector('.name').textContent = b.title;
-        pl.querySelector('.desc').textContent = b.subtitle || '';
-        pl.querySelector('.pages').textContent = '共 ' + b.pages + ' 頁';
-        row.appendChild(st); row.appendChild(pl);
-      });
-      var pk = document.createElement('div'); pk.className = 'plank'; row.appendChild(pk);
-      cs.appendChild(row);
-    }
+    box.style.setProperty('--w', Math.max(150, Math.min(0.22 * W, 0.34 * H, 380)) + 'px');
+    BOOKS.forEach(function(b){
+      var it = document.createElement('a'); it.className = 'item'; it.href = '#' + encodeURIComponent(b.id);
+      it.innerHTML = '<div class="cover"><img alt=""></div><div class="name"></div><div class="desc"></div><span class="pages"></span><span class="go">開始閱讀</span>';
+      it.querySelector('.cover').style.aspectRatio = b.ratio; if (b.ratio > 1) it.style.width = 'min(100%, calc(var(--w) * 1.7))';
+      var im = it.querySelector('img'); im.src = 'books/' + b.id + '/pages/p001.jpg'; im.alt = b.title + ' 封面';
+      it.querySelector('.name').textContent = b.title;
+      it.querySelector('.desc').textContent = b.subtitle || '';
+      it.querySelector('.pages').textContent = '共 ' + b.pages + ' 頁';
+      box.appendChild(it);
+    });
   }
+  (function(){ var S = window.SITE || {}; if (S.title){ document.querySelector('#shelfView h1').textContent = S.title; document.title = S.title; }
+    if (typeof S.subtitle === 'string') document.querySelector('#shelfView .sub').textContent = S.subtitle; })();
   renderShelf();
   var rsT = 0; addEventListener('resize', function(){ clearTimeout(rsT); rsT = setTimeout(renderShelf, 150); });
 
@@ -273,6 +244,7 @@
 
   /* ---------- 工具 ---------- */
   function pagesOf(k){
+    if (SINGLE) return {l: 0, r: (k >= 0 && k < TOTAL) ? k + 1 : 0};   // 橫式（簡報）：一次一頁
     var l = (k >= 1 && 2 * k <= TOTAL) ? 2 * k : 0;
     var r = (2 * k + 1 <= TOTAL) ? 2 * k + 1 : 0;
     return {l: l, r: r};
@@ -311,6 +283,7 @@
   // 封面只有右頁、封底只有左頁時，把書本平移，讓單頁置中
   function shiftFor(k){
     var p = pagesOf(k);
+    if (SINGLE) return '-25%';
     if (!p.l && p.r) return '-25%';
     if (p.l && !p.r) return '25%';
     return '0';
@@ -319,7 +292,7 @@
     if (!BOOK) return;
     var W = innerWidth, H = innerHeight;
     var tall = W / H < 1.25 && W >= 1400;                  // 雙直式螢幕：上下要留空間給書名和按鈕
-    var ph = Math.min(H * (tall ? 0.74 : 0.92), W * 0.98 / (2 * RATIO));
+    var ph = Math.min(H * (tall ? 0.74 : 0.92), W * 0.98 / ((SINGLE ? 1 : 2) * RATIO));
     book.style.height = ph + 'px';
     book.style.width = (2 * ph * RATIO) + 'px';
   }
@@ -334,7 +307,7 @@
   /* ---------- 開書 / 關書 ---------- */
   function openBook(b){
     gen++;
-    BOOK = b; TOTAL = b.pages; RATIO = b.ratio; S = Math.floor(TOTAL / 2) + 1;
+    BOOK = b; TOTAL = b.pages; RATIO = b.ratio; SINGLE = !!b.single; S = SINGLE ? TOTAL : Math.floor(TOTAL / 2) + 1;
     keep = {}; keepOrder = [];
     busy = false; playing = true; pausedAt = 0; modal = false; built = false;
     playBtn.textContent = '❚❚ 暫停';
@@ -382,6 +355,7 @@
     if (busy || !active) return;
     var t = s + dir;
     if (t < 0 || t >= S){ return wrap(t < 0 ? S - 1 : 0); }
+    if (SINGLE){ return wrap(t); }      // 橫式簡報：淡出淡入換頁
     busy = true; var g = gen;
     var cur = pagesOf(s), nxt = pagesOf(t);
     var underNext = dir > 0 ? nxt.r : nxt.l;           // 翻開後露出的那一頁
@@ -450,7 +424,7 @@
   function manual(d){ if (!active || modal) return; flip(d); wake(); }
 
   /* ---------- 目錄面板：章節 + 頁面縮圖，點選就跳頁 ---------- */
-  function spreadOf(p){ return Math.min(S - 1, Math.floor(p / 2)); }
+  function spreadOf(p){ return SINGLE ? Math.min(S - 1, p - 1) : Math.min(S - 1, Math.floor(p / 2)); }
   function buildPanel(){
     built = true;
     $('ptitle').textContent = BOOK.title + (BOOK.subtitle ? '　' + BOOK.subtitle : '');
@@ -463,7 +437,7 @@
     var g = $('grid');
     for (var n = 1; n <= TOTAL; n++){
       (function(n){
-        var d = document.createElement('div'); d.className = 'th'; d.dataset.p = n;
+        var d = document.createElement('div'); d.className = 'th'; d.dataset.p = n; d.style.aspectRatio = RATIO;
         var im = new Image(); im.loading = 'lazy'; im.alt = '第 ' + n + ' 頁';
         im.src = 'books/' + BOOK.id + '/thumbs/p' + pad(n) + '.jpg';
         var sp = document.createElement('span'); sp.textContent = n;

@@ -1,4 +1,7 @@
 /* 書架設定：要新增書，就在這裡加一筆，並把頁面圖放到 books/<id>/pages/、縮圖放到 books/<id>/thumbs/ */
+/* 書架頁的大標題與小標題：直接改這兩行文字就好（小標題留空 '' 就不顯示） */
+window.SITE = { title: '電子書架', subtitle: '點選一本書開始閱讀，書頁會自動翻動' };
+
 window.BOOKS = [
   {
     id: 'peach',
@@ -31,6 +34,19 @@ window.BOOKS = [
       { t: '合作通路客服專線', p: 18 },
       { t: '查詢窗口', p: 19 },
       { t: '提醒事項', p: 20 }
+    ]
+  },
+  {
+    id: 'lunch',
+    title: '健康好餐',
+    subtitle: '',
+    pages: 81,
+    ratio: 16 / 9,
+    single: true,
+    toc: [
+      { t: '食在安心成果簡報', p: 1 },
+      { t: '南勢國小 健康好餐', p: 9 },
+      { t: '社子國小 健康好餐', p: 56 }
     ]
   }
 ];
