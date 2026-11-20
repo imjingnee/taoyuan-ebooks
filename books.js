@@ -50,5 +50,14 @@ window.BOOKS = [
       { t: '南勢國小 健康好餐', p: 11 },
       { t: '社子國小 健康好餐', p: 58 }
     ]
+  },
+  {
+    id: 'video',
+    type: 'video',
+    title: '校園米其林美食爭霸賽',
+    subtitle: '活動影片',
+    duration: '5 分 41 秒',
+    src: 'media/michelin.mp4',
+    poster: 'media/michelin-poster.jpg'
   }
 ];

@@ -28,18 +28,24 @@
   .sub{margin-top:10px;font-size:clamp(16px,1.8vw,24px);color:var(--muted);text-align:center}
   /* 空白背景：書平放在畫面上，書名貼在下方 */
   #books{--w:240px;margin-top:clamp(24px,5vh,56px);width:min(100%,1400px);display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;gap:48px 56px}
-  .item{width:var(--w);display:block;color:inherit;text-decoration:none;outline:none;cursor:pointer;text-align:center;transition:transform .25s}
+  .item{width:var(--w);min-width:176px;display:block;color:inherit;text-decoration:none;outline:none;cursor:pointer;text-align:center;transition:transform .25s}
   .item:hover,.item:focus-visible{transform:translateY(-6px)}
   .cover{position:relative;aspect-ratio:.708;border-radius:3px 8px 8px 3px;overflow:hidden;background:#fff;
     box-shadow:0 14px 24px rgba(0,0,0,.4),0 2px 6px rgba(0,0,0,.35)}
   .cover img{width:100%;height:100%;object-fit:fill;display:block}
   .cover::before{content:"";position:absolute;left:0;top:0;bottom:0;width:7%;
     background:linear-gradient(90deg,rgba(0,0,0,.28),rgba(255,255,255,.14) 55%,transparent);z-index:1}
-  .item .name{margin-top:18px}
+  .item .name{margin:18px -36px 0;white-space:nowrap}
   .name{font-size:clamp(18px,1.9vw,28px);font-weight:700;line-height:1.3}
   .desc{margin-top:6px;font-size:clamp(13px,1.3vw,18px);color:var(--muted)}
   .pages{display:inline-block;margin-top:10px;padding:5px 14px;border-radius:999px;background:rgba(240,138,60,.28);font-size:clamp(13px,1.2vw,17px)}
   .go{display:block;margin:12px auto 0;padding:9px 24px;width:max-content;border-radius:999px;background:var(--accent);color:#1b1208;font-weight:700;font-size:clamp(15px,1.4vw,19px)}
+  .play{position:absolute;left:50%;top:50%;width:22%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;background:rgba(0,0,0,.55);z-index:2}
+  .play::after{content:"";position:absolute;left:38%;top:26%;border-style:solid;border-width:24% 0 24% 38%;border-width:calc(var(--w) * .075) 0 calc(var(--w) * .075) calc(var(--w) * .12);border-color:transparent transparent transparent #fff}
+  #videoView{position:fixed;inset:0;display:none;background:#000;z-index:5}
+  #videoView video{position:absolute;inset:0;width:100%;height:100%;background:#000;outline:none}
+  #vback{position:absolute;left:16px;top:calc(16px + env(safe-area-inset-top));z-index:6;height:48px;padding:0 22px;border:0;border-radius:999px;background:rgba(0,0,0,.6);color:#fff;font-size:20px;font-weight:600;white-space:nowrap;cursor:pointer}
+  @media (max-aspect-ratio: 5/4) and (min-width: 1400px){ #vback{height:76px;padding:0 34px;font-size:30px} }
   #sfull{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:2}
   .tip{margin-top:auto;padding-top:40px;color:rgba(0,0,0,.45);font-size:15px;text-align:center}
 
@@ -125,6 +131,12 @@
   <div id="books"></div>
   <p class="tip">看書時：點左右翻頁、點中間暫停、☰ 目錄可跳頁、⌂ 書架可換別本書</p>
   <button id="sfull" aria-label="全螢幕">⛶ 全螢幕</button>
+</div>
+
+<!-- ============ 影片播放 ============ -->
+<div id="videoView">
+  <video id="vid" controls playsinline preload="metadata"></video>
+  <button id="vback" aria-label="回到書架">⌂ 書架</button>
 </div>
 
 <!-- ============ 閱讀器（和書架在同一個網頁，切換時不換頁，所以不會退出全螢幕） ============ -->
@@ -216,16 +228,21 @@
   function renderShelf(){
     var box = $('books'); box.innerHTML = '';
     var W = innerWidth, H = innerHeight;
-    box.style.setProperty('--w', Math.max(150, Math.min(0.22 * W, 0.34 * H, 380)) + 'px');
+    function fac(b){ return b.type === 'video' ? 1.6 : (b.coverRatio || b.ratio) / .708; }   // 各項目寬度相對於「--w」的倍數（封面等高）
+    var sumF = 0; BOOKS.forEach(function(b){ sumF += fac(b); });
+    var availW = Math.min(W - 48, 1400) - (BOOKS.length - 1) * 56 - 4;
+    var w0 = Math.min(0.22 * W, 0.34 * H, 380);
+    box.style.setProperty('--w', Math.max(120, Math.min(w0, availW / sumF)) + 'px');
     BOOKS.forEach(function(b){
       var it = document.createElement('a'); it.className = 'item'; it.href = '#' + encodeURIComponent(b.id);
-      it.innerHTML = '<div class="cover"><img alt=""></div><div class="name"></div><div class="desc"></div><span class="pages"></span><span class="go">開始閱讀</span>';
-      var cr = b.coverRatio || b.ratio;
-      it.querySelector('.cover').style.aspectRatio = cr; it.style.width = 'min(100%, calc(var(--w) / .708 * ' + cr + '))';   // 每本書封面等高
-      var im = it.querySelector('img'); im.src = b.cover || ('books/' + b.id + '/pages/p001.jpg'); im.alt = b.title + ' 封面';
+      var isVid = b.type === 'video';
+      it.innerHTML = '<div class="cover"><img alt="">' + (isVid ? '<i class="play"></i>' : '') + '</div><div class="name"></div><div class="desc"></div><span class="pages"></span><span class="go">' + (isVid ? '播放影片' : '開始閱讀') + '</span>';
+      var cr = isVid ? 16 / 9 : (b.coverRatio || b.ratio);
+      it.querySelector('.cover').style.aspectRatio = cr; it.style.width = 'calc(var(--w) * ' + fac(b) + ')';   // 每本書封面等高
+      var im = it.querySelector('img'); im.src = isVid ? b.poster : (b.cover || ('books/' + b.id + '/pages/p001.jpg')); im.alt = b.title + ' 封面';
       it.querySelector('.name').textContent = b.title;
       it.querySelector('.desc').textContent = b.subtitle || '';
-      it.querySelector('.pages').textContent = '共 ' + b.pages + ' 頁';
+      it.querySelector('.pages').textContent = isVid ? ('影片 ' + (b.duration || '')) : ('共 ' + b.pages + ' 頁');
       box.appendChild(it);
     });
   }
@@ -238,9 +255,29 @@
   function route(){
     var id = decodeURIComponent(location.hash.replace(/^#/, ''));
     var b = BOOKS.filter(function(x){ return x.id === id; })[0];
+    if (b && b.type === 'video'){ if (active) closeBook(); openVideo(b); return; }
+    closeVideo();
     if (b){ if (!active || !BOOK || BOOK.id !== b.id) openBook(b); }
     else if (active) closeBook();
   }
+  var vv = $('videoView'), vid = $('vid'), videoOn = false;
+  function openVideo(b){
+    if (videoOn) return;
+    videoOn = true;
+    shelfView.style.display = 'none'; vv.style.display = 'block';
+    vid.poster = b.poster || ''; vid.src = b.src;
+    document.title = b.title;
+    try { var p = vid.play(); if (p && p.catch) p.catch(function(){}); } catch (e) {}
+  }
+  function closeVideo(){
+    if (!videoOn) return;
+    videoOn = false;
+    try { vid.pause(); } catch (e) {}
+    vid.removeAttribute('src'); try { vid.load(); } catch (e) {}
+    vv.style.display = 'none'; shelfView.style.display = 'flex';
+    document.title = (window.SITE && window.SITE.title) || '電子書架';
+  }
+  $('vback').onclick = function(){ location.hash = ''; };
   addEventListener('hashchange', route);
 
   /* ---------- 工具 ---------- */
