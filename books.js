@@ -38,7 +38,7 @@ window.BOOKS = [
   },
   {
     id: 'lunch',
-    title: '健康好餐',
+    title: '健康好餐x食在安心',
     subtitle: '',
     pages: 81,
     ratio: 16 / 9,
