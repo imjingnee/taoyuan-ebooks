@@ -221,7 +221,7 @@
       var it = document.createElement('a'); it.className = 'item'; it.href = '#' + encodeURIComponent(b.id);
       it.innerHTML = '<div class="cover"><img alt=""></div><div class="name"></div><div class="desc"></div><span class="pages"></span><span class="go">開始閱讀</span>';
       var cr = b.coverRatio || b.ratio;
-      it.querySelector('.cover').style.aspectRatio = cr; if (cr > 1) it.style.width = 'min(100%, calc(var(--w) * 1.7))';
+      it.querySelector('.cover').style.aspectRatio = cr; it.style.width = 'min(100%, calc(var(--w) / .708 * ' + cr + '))';   // 每本書封面等高
       var im = it.querySelector('img'); im.src = b.cover || ('books/' + b.id + '/pages/p001.jpg'); im.alt = b.title + ' 封面';
       it.querySelector('.name').textContent = b.title;
       it.querySelector('.desc').textContent = b.subtitle || '';
@@ -320,7 +320,7 @@
     shelfView.style.display = 'none'; reader.style.display = 'block'; active = true;
     layout();
     var start = 0;
-    try { if (!q.has('restart')) start = Math.min(S - 1, parseInt(localStorage.getItem('spread-' + b.id), 10) || 0); } catch (e) {}
+    try { if (!q.has('restart') && !b.alwaysCover) start = Math.min(S - 1, parseInt(localStorage.getItem('spread-' + b.id), 10) || 0); } catch (e) {}
     book.style.transition = 'none'; renderStatic(start);
     void book.offsetWidth; book.style.transition = '';
     showUI(false); wake(); keepAwake();
