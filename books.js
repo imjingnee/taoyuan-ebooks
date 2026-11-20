@@ -42,7 +42,6 @@ window.BOOKS = [
     subtitle: '',
     pages: 81,
     ratio: 16 / 9,
-    single: true,
     toc: [
       { t: '食在安心成果簡報', p: 1 },
       { t: '南勢國小 健康好餐', p: 9 },
