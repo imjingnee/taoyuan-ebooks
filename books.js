@@ -1,6 +1,6 @@
 /* 書架設定：要新增書，就在這裡加一筆，並把頁面圖放到 books/<id>/pages/、縮圖放到 books/<id>/thumbs/ */
 /* 書架頁的大標題與小標題：直接改這兩行文字就好（小標題留空 '' 就不顯示） */
-window.SITE = { title: '電子書架', subtitle: '點選一本書開始閱讀，書頁會自動翻動' };
+window.SITE = { title: '桃園好食光・營養升級全照顧', subtitle: '吃得飽 × 吃得好 × 吃得安心 × 師生共好' };
 
 window.BOOKS = [
   {
