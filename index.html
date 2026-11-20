@@ -320,7 +320,7 @@
     shelfView.style.display = 'none'; reader.style.display = 'block'; active = true;
     layout();
     var start = 0;
-    try { if (!q.has('restart') && !b.alwaysCover) start = Math.min(S - 1, parseInt(localStorage.getItem('spread-' + b.id), 10) || 0); } catch (e) {}
+    // 每次打開都從封面開始（不再記住上次看到哪一頁）
     book.style.transition = 'none'; renderStatic(start);
     void book.offsetWidth; book.style.transition = '';
     showUI(false); wake(); keepAwake();

@@ -43,7 +43,6 @@ window.BOOKS = [
     pages: 83,
     cover: 'books/lunch/cover.jpg',
     coverRatio: 9 / 16,
-    alwaysCover: true,      // 每次打開都從封面開始（不記住上次看到哪一頁）
     ratio: 16 / 9,
     toc: [
       { t: '封面', p: 1 },
