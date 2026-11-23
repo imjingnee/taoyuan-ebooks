@@ -181,7 +181,7 @@
   <div id="err">圖片載入失敗，請確認 books 資料夾和 index.html 放在一起。</div>
 </div>
 
-<script src="books.js?v=20261123d"></script>
+<script src="books.js?v=20261123e"></script>
 <script>
 (function(){
   var q = new URLSearchParams(location.search);
@@ -272,7 +272,9 @@
     shelfView.style.display = 'none'; vv.style.display = 'block';
     vid.poster = b.poster || ''; vid.src = b.src;
     document.title = b.title;
-    try { var p = vid.play(); if (p && p.catch) p.catch(function(){}); } catch (e) {}
+    vid.loop = (b.loop !== false);   // 輪播：播完自動從頭再播（books.js 該影片設 loop: false 可關閉）
+    vid.muted = false;
+    try { var p = vid.play(); if (p && p.catch) p.catch(function(){ vid.muted = true; try { vid.play(); } catch (e) {} }); } catch (e) {}   // 瀏覽器擋有聲自動播放時，改靜音照樣輪播
   }
   function closeVideo(){
     if (!videoOn) return;
