@@ -25,11 +25,11 @@
 
   /* ================= 書架 ================= */
   #shelfView{position:fixed;inset:0;overflow:auto;display:flex;flex-direction:column;align-items:center;
-    padding:clamp(24px,5vh,64px) 24px;-webkit-overflow-scrolling:touch}
+    padding:clamp(16px,3vh,40px) 24px;-webkit-overflow-scrolling:touch}
   #shelfView h1{font-size:clamp(30px,4.2vw,56px);letter-spacing:.08em;text-align:center}
   .sub{margin-top:10px;font-size:clamp(16px,1.8vw,24px);color:var(--muted);text-align:center}
   /* 空白背景：書平放在畫面上，書名貼在下方 */
-  #books{--w:240px;margin-top:clamp(24px,5vh,56px);width:min(100%,1400px);display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:48px 56px}
+  #books{--w:240px;margin-top:clamp(20px,3vh,40px);width:min(100%,1600px);display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:48px 56px}
   .item{width:var(--w);min-width:176px;display:block;color:inherit;text-decoration:none;outline:none;cursor:pointer;text-align:center;transition:transform .25s}
   .item:hover,.item:focus-visible{transform:translateY(-6px)}
   .cover{position:relative;aspect-ratio:.708;border-radius:3px 8px 8px 3px;overflow:hidden;background:#fff;
@@ -37,7 +37,7 @@
   .cover img{width:100%;height:100%;object-fit:fill;display:block}
   .cover::before{content:"";position:absolute;left:0;top:0;bottom:0;width:7%;
     background:linear-gradient(90deg,rgba(0,0,0,.28),rgba(255,255,255,.14) 55%,transparent);z-index:1}
-  .item .name{margin:18px -36px 0;white-space:nowrap}
+  .item .name{margin:18px -24px 0;white-space:nowrap}
   .name{font-size:clamp(18px,1.9vw,28px);font-weight:700;line-height:1.3}
   .desc{margin-top:6px;font-size:clamp(13px,1.3vw,18px);color:var(--muted)}
   .pages{display:inline-block;margin-top:10px;padding:5px 14px;border-radius:999px;background:rgba(240,138,60,.28);font-size:clamp(13px,1.2vw,17px)}
@@ -183,7 +183,7 @@
   <div id="err">圖片載入失敗，請確認 books 資料夾和 index.html 放在一起。</div>
 </div>
 
-<script src="books.js?v=20261123g"></script>
+<script src="books.js?v=20261123h"></script>
 <script>
 (function(){
   var q = new URLSearchParams(location.search);
@@ -238,13 +238,17 @@
     var W = innerWidth, H = innerHeight;
     function fac(b){ return b.type === 'video' ? (b.coverRatio ? b.coverRatio / .708 : 1.6) : (b.coverRatio || b.ratio) / .708; }   // 各項目寬度相對於「--w」的倍數（封面等高）
     var rowOf = function(b){ return b.row || 1; };
-    var nRows = 1; BOOKS.forEach(function(b){ nRows = Math.max(nRows, rowOf(b)); });
-    var rs = {};   // 每一排的寬度總和與本數，用最擠的那一排決定封面大小
-    BOOKS.forEach(function(b){ var r = rowOf(b); rs[r] = rs[r] || {f: 0, n: 0}; rs[r].f += fac(b); rs[r].n++; });
-    var maxW = Math.min(W - 48, 1400), fitW = 1e9;
-    Object.keys(rs).forEach(function(r){ fitW = Math.min(fitW, (maxW - (rs[r].n - 1) * 56 - 4) / rs[r].f); });
+    var S1 = 1.35;   // 第一排（評鑑書）封面比第二排大的倍數
+    var scaleOf = function(b){ return rowOf(b) === 1 ? S1 : 1; };
+    var GAP = Math.round(Math.max(72, Math.min(0.05 * W, 130)));   // 第二排書與書的橫向間距
+    box.style.columnGap = GAP + 'px'; box.style.rowGap = '56px';
+    var rs = {};   // 每一排的寬度總和與本數
+    BOOKS.forEach(function(b){ var r = rowOf(b); rs[r] = rs[r] || {f: 0, n: 0}; rs[r].f += fac(b) * scaleOf(b); rs[r].n++; });
+    var maxW = Math.min(W - 48, 1600), fitW = 1e9;
+    Object.keys(rs).forEach(function(r){ fitW = Math.min(fitW, (maxW - (rs[r].n - 1) * GAP - 4) / rs[r].f); });
     var w0 = Math.min(0.22 * W, 0.34 * H, 380);
-    if (nRows > 1) w0 = Math.min(w0, Math.max(170, .708 * ((H - 308) / nRows - 200)));   // 多排時縮小封面，盡量一個畫面放下
+    var nRows = Object.keys(rs).length;
+    if (nRows > 1) w0 = Math.min(w0, Math.max(240, .708 * ((H - 330 - 340) / (1 + S1))));   // 兩排盡量一個畫面放下（最小仍保持夠大）
     box.style.setProperty('--w', Math.max(120, Math.min(w0, fitW)) + 'px');
     var lastRow = 1;
     BOOKS.forEach(function(b){
@@ -253,7 +257,7 @@
       var isVid = b.type === 'video';
       it.innerHTML = '<div class="cover"><img alt="">' + (isVid ? '<i class="play"></i>' : '') + '</div><div class="name"></div><div class="desc"></div><span class="pages"></span><span class="go">' + (isVid ? '播放影片' : '開始閱讀') + '</span>';
       var cr = isVid ? (b.coverRatio || 16 / 9) : (b.coverRatio || b.ratio);
-      it.querySelector('.cover').style.aspectRatio = cr; it.style.width = 'calc(var(--w) * ' + fac(b) + ')';   // 每本書封面等高
+      it.querySelector('.cover').style.aspectRatio = cr; it.style.width = 'calc(var(--w) * ' + (fac(b) * scaleOf(b)) + ')';   // 每本書封面等高
       var im = it.querySelector('img'); im.src = (isVid ? (b.cover || b.poster) : (b.cover || ('books/' + b.id + '/pages/p001.jpg'))) + '?v=20261123c'; im.alt = b.title + ' 封面';
       it.querySelector('.name').textContent = b.title;
       it.querySelector('.desc').textContent = b.subtitle || '';
