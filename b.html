@@ -123,6 +123,7 @@
   .th.cur:hover{outline-color:var(--accent)}
   #ptip{padding:0 24px 12px;color:var(--muted);font-size:15px}
   /* ---- 版本 B：左大右小（左右兩區同高、上下切齊） ---- */
+  .tip{display:none}
   #shelfView h1{font-size:clamp(40px,5.6vw,92px);line-height:1.15}
   #shelfView .sub{font-size:clamp(22px,2.6vw,42px);margin-top:12px}
   #books{flex-wrap:nowrap;align-items:flex-start;justify-content:center;width:min(100%,1800px)}
@@ -249,9 +250,9 @@
     var W = innerWidth, H = innerHeight;
     var sv = $('shelfView'), sub = sv.querySelector('.sub');
     var topY = sub.getBoundingClientRect().bottom + sv.scrollTop;          // 標題區底部：書本一定放在它下面，不會蓋到標題
-    var Wc = Math.min(W - 48, 1800), BM = 30;
-    var Hav = Math.max(320, H - topY - BM - 70);                            // 標題以下、底部提示以上可用的高度
-    var TL = 230, TR = 125;                                                  // 左邊書下方文字、右邊每本書下方文字的高度
+    var Wc = Math.min(W - 48, 1800), BM = 22;
+    var Hav = Math.max(320, H - topY - BM - 44);                            // 標題以下、底部提示以上可用的高度
+    var TL = 215, TR = 118;                                                  // 左邊書下方文字、右邊每本書下方文字的高度
     var gx = Math.round(Math.max(36, Math.min(.025 * W, 64))), gy = 30, colGap = Math.round(Math.max(48, Math.min(.04 * W, 100)));
     var FR = 148 / 210;
     // 兩區同高 Hb：左邊封面高 = Hb-TL（16:9），右邊每格封面高 = (Hb-2TR-gy)/2（A5）。寬度總和不能超過 Wc。
