@@ -71,6 +71,7 @@ window.BOOKS = [
     title: '午餐輔導團評鑑書',
     subtitle: '桃園市午餐輔導團亮點活動',
     pages: 11,
+    single: true,           // 橫式簡報：書攤開但只顯示右邊一頁
     ratio: 16 / 9,
     toc: [
       { t: '封面', p: 1 },
