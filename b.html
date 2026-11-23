@@ -207,7 +207,7 @@
   <div id="err">圖片載入失敗，請確認 books 資料夾和 index.html 放在一起。</div>
 </div>
 
-<script src="books.js?v=20261123q"></script>
+<script src="books.js?v=20261123r"></script>
 <script>
 (function(){
   var q = new URLSearchParams(location.search);
@@ -249,8 +249,8 @@
     else if (el.requestFullscreen || el.webkitRequestFullscreen){ (el.requestFullscreen || el.webkitRequestFullscreen).call(el); }
     else { alert('這個瀏覽器不支援網頁全螢幕。\n\niPad：點 Safari 的「分享」→「加入主畫面」，之後從主畫面的圖示開啟，就是沒有網址列的全螢幕。'); }
   }
-  // 已經是從主畫面開啟的全螢幕 App 時，不需要全螢幕按鈕
-  if (navigator.standalone || (window.matchMedia && matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches)){
+  // 只有從 iPad 主畫面開啟的 App 才不需要全螢幕按鈕（瀏覽器全螢幕/展示模式下仍要顯示，才能手動切換）
+  if (navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches)){
     $('sfull').style.display = 'none'; $('full').style.display = 'none';
   }
   $('sfull').onclick = toggleFull;
@@ -407,17 +407,21 @@
   function toast(t){ msg.textContent = t; msg.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(function(){ msg.classList.remove('show'); }, 900); }
 
   /* ---------- 旁白（書有 audio 與 cues 時：換頁跟著聲音走） ---------- */
-  var aud = new Audio(); aud.preload = 'auto'; aud.loop = true; window.AUD = aud;   // window.AUD 方便除錯
+  var aud = new Audio(); aud.preload = 'auto'; aud.loop = true; var finished = false; window.AUD = aud;   // window.AUD 方便除錯
   var LEAD = 0.9;             // 翻頁動畫約 1.9 秒，提早一點開始翻，讓新頁在該講的時候剛好翻到
   function audMode(){ return !!(BOOK && BOOK.audio && BOOK.cues && SINGLE && !aud.paused); }
   function cueAt(t){ var c = BOOK.cues, k = 0; for (var i = 0; i < c.length; i++){ if (t + LEAD >= c[i]) k = i; } return k; }
   function audSeek(k){ if (BOOK && BOOK.audio && BOOK.cues && BOOK.cues[k] != null){ try { aud.currentTime = BOOK.cues[k]; } catch (e) {} } }
   function audPlay(){
     if (!(BOOK && BOOK.audio)) return;
+    finished = false;
     var p; try { p = aud.play(); } catch (e) {}
     if (p && p.catch) p.catch(function(){ toast('點一下畫面，開始播放聲音'); });
   }
-  aud.addEventListener('ended', function(){ if (active && BOOK && BOOK.audio){ aud.currentTime = 0; if (playing && !modal) audPlay(); } });
+  aud.addEventListener('ended', function(){      // holdEnd 的書：旁白播完就停在最後一頁，不再循環
+    if (active && BOOK && BOOK.audio && BOOK.holdEnd){ finished = true; playing = false; playBtn.textContent = '▶ 重播'; fill.style.width = '100%'; }
+    else if (active && BOOK && BOOK.audio){ aud.currentTime = 0; if (playing && !modal) audPlay(); }
+  });
   // 瀏覽器擋住自動播放時，第一次點擊/觸控就補上聲音，並對齊到目前這一頁
   document.addEventListener('pointerdown', function(){ if (active && BOOK && BOOK.audio && playing && !modal && aud.paused){ audSeek(s); audPlay(); } }, true);
 
@@ -440,7 +444,7 @@
     book.style.transition = 'none'; renderStatic(start);
     void book.offsetWidth; book.style.transition = '';
     showUI(false); wake(); keepAwake();
-    if (b.audio){ if (aud.getAttribute('data-src') !== b.audio){ aud.src = b.audio; aud.setAttribute('data-src', b.audio); } aud.currentTime = 0; audPlay(); }
+    if (b.audio){ if (aud.getAttribute('data-src') !== b.audio){ aud.src = b.audio; aud.setAttribute('data-src', b.audio); } aud.loop = !b.holdEnd; finished = false; aud.currentTime = 0; audPlay(); }
   }
   function closeBook(){
     aud.pause();
@@ -524,6 +528,7 @@
   }
 
   function check(now){
+    if (finished) return;                       // 旁白已播完：停在最後一頁
     if (active && playing && !busy && !modal && audMode()){
       var k = cueAt(aud.currentTime);
       if (k !== s){ if (k === s + 1) flip(1); else wrap(k); }
@@ -547,7 +552,7 @@
     if (v){ t0 = performance.now() - pausedAt; }
     else { pausedAt = performance.now() - t0; }
     playBtn.textContent = v ? '❚❚ 暫停' : '▶ 播放';
-    if (BOOK && BOOK.audio){ if (v){ audSeek(s); audPlay(); } else aud.pause(); }
+    if (BOOK && BOOK.audio){ if (v){ if (finished){ finished = false; audSeek(0); if (s !== 0) wrap(0); } else audSeek(s); audPlay(); } else aud.pause(); }
     toast(v ? '播放中' : '已暫停'); wake();
   }
   function manual(d){ if (!active || modal) return; if (!busy && BOOK && BOOK.audio){ var t = s + d; audSeek(t < 0 ? TOTAL - 1 : (t >= S ? 0 : t)); } flip(d); wake(); }
