@@ -206,7 +206,7 @@
   <div id="err">圖片載入失敗，請確認 books 資料夾和 index.html 放在一起。</div>
 </div>
 
-<script src="books.js?v=20261123n"></script>
+<script src="books.js?v=20261123p"></script>
 <script>
 (function(){
   var q = new URLSearchParams(location.search);
@@ -405,6 +405,21 @@
   }
   function toast(t){ msg.textContent = t; msg.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(function(){ msg.classList.remove('show'); }, 900); }
 
+  /* ---------- 旁白（書有 audio 與 cues 時：換頁跟著聲音走） ---------- */
+  var aud = new Audio(); aud.preload = 'auto';
+  var LEAD = 0.9;             // 翻頁動畫約 1.9 秒，提早一點開始翻，讓新頁在該講的時候剛好翻到
+  function audMode(){ return !!(BOOK && BOOK.audio && BOOK.cues && SINGLE && !aud.paused); }
+  function cueAt(t){ var c = BOOK.cues, k = 0; for (var i = 0; i < c.length; i++){ if (t + LEAD >= c[i]) k = i; } return k; }
+  function audSeek(k){ if (BOOK && BOOK.audio && BOOK.cues && BOOK.cues[k] != null){ try { aud.currentTime = BOOK.cues[k]; } catch (e) {} } }
+  function audPlay(){
+    if (!(BOOK && BOOK.audio)) return;
+    var p; try { p = aud.play(); } catch (e) {}
+    if (p && p.catch) p.catch(function(){ toast('點一下畫面，開始播放聲音'); });
+  }
+  aud.addEventListener('ended', function(){ if (active && BOOK && BOOK.audio){ aud.currentTime = 0; if (playing && !modal) audPlay(); } });
+  // 瀏覽器擋住自動播放時，第一次點擊/觸控就補上聲音，並對齊到目前這一頁
+  document.addEventListener('pointerdown', function(){ if (active && BOOK && BOOK.audio && playing && !modal && aud.paused){ audSeek(s); audPlay(); } }, true);
+
   /* ---------- 開書 / 關書 ---------- */
   function openBook(b){
     gen++;
@@ -424,8 +439,10 @@
     book.style.transition = 'none'; renderStatic(start);
     void book.offsetWidth; book.style.transition = '';
     showUI(false); wake(); keepAwake();
+    if (b.audio){ if (aud.getAttribute('data-src') !== b.audio){ aud.src = b.audio; aud.setAttribute('data-src', b.audio); } aud.currentTime = 0; audPlay(); }
   }
   function closeBook(){
+    aud.pause();
     gen++; active = false; busy = false; closePanelQuiet(); showUI(false);
     reader.style.display = 'none'; shelfView.style.display = 'flex';
     clearTimeout(hideT); clearTimeout(idleT); document.body.classList.remove('idle');
@@ -506,6 +523,12 @@
   }
 
   function check(now){
+    if (active && playing && !busy && !modal && audMode()){
+      var k = cueAt(aud.currentTime);
+      if (k !== s){ if (k === s + 1) flip(1); else wrap(k); }
+      else { var a0 = BOOK.cues[s], a1 = (BOOK.cues[s + 1] != null ? BOOK.cues[s + 1] : (aud.duration || a0 + 1)); fill.style.width = Math.max(0, Math.min(100, (aud.currentTime - a0) / (a1 - a0) * 100)) + '%'; }
+      return;
+    }
     if (active && playing && !busy && !modal){
       var p = (now - t0) / dwell();
       if (p >= 1) flip(1); else fill.style.width = (p * 100) + '%';
@@ -523,9 +546,10 @@
     if (v){ t0 = performance.now() - pausedAt; }
     else { pausedAt = performance.now() - t0; }
     playBtn.textContent = v ? '❚❚ 暫停' : '▶ 播放';
+    if (BOOK && BOOK.audio){ if (v){ audSeek(s); audPlay(); } else aud.pause(); }
     toast(v ? '播放中' : '已暫停'); wake();
   }
-  function manual(d){ if (!active || modal) return; flip(d); wake(); }
+  function manual(d){ if (!active || modal) return; if (!busy && BOOK && BOOK.audio){ var t = s + d; audSeek(t < 0 ? TOTAL - 1 : (t >= S ? 0 : t)); } flip(d); wake(); }
 
   /* ---------- 目錄面板：章節 + 頁面縮圖，點選就跳頁 ---------- */
   function spreadOf(p){ return SINGLE ? Math.min(S - 1, p - 1) : Math.min(S - 1, Math.floor(p / 2)); }
@@ -560,7 +584,7 @@
   function openPanel(){
     if (modal || !active) return;
     if (!built) buildPanel();
-    modal = true; modalAt = performance.now();
+    modal = true; modalAt = performance.now(); if (BOOK && BOOK.audio) aud.pause();
     markCurrent(); panel.classList.add('open');
     var cur = $('grid').querySelector('.cur'); if (cur) cur.scrollIntoView({block:'center'});
   }
@@ -568,9 +592,10 @@
     if (!modal) return;
     modal = false; t0 += performance.now() - modalAt;     // 開著目錄的時間不算進停留秒數
     panel.classList.remove('open');
+    if (BOOK && BOOK.audio && playing){ audSeek(s); audPlay(); }
   }
   function closePanelQuiet(){ modal = false; panel.classList.remove('open'); }
-  function jump(p){ closePanel(); var k = spreadOf(p); if (k !== s) wrap(k); }
+  function jump(p){ var k = spreadOf(p); closePanel(); if (BOOK && BOOK.audio) audSeek(k); if (k !== s) wrap(k); }
 
   $('menu').onclick = function(e){ e.stopPropagation(); openPanel(); };
   $('pclose').onclick = function(e){ e.stopPropagation(); closePanel(); };
@@ -606,7 +631,7 @@
     else if (e.key === 't' || e.key === 'T' || e.key === 'm' || e.key === 'M') { modal ? closePanel() : openPanel(); }
     else if (e.key === 'Escape') closePanel();
     else if (e.key === 'b' || e.key === 'B') location.hash = '';
-    else if (e.key === 'Home') { if (!busy) renderStatic(0); }
+    else if (e.key === 'Home') { if (!busy){ audSeek(0); renderStatic(0); } }
     wake();
   });
 
