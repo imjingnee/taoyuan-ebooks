@@ -83,9 +83,11 @@
     opacity:0;pointer-events:none}                       /* 預設完全隱藏 */
   #ui.show{opacity:1;pointer-events:auto}
   /* 角落的小按鈕：點一下展開工具列，再點一下收起 */
-  #more{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:9;min-width:0;width:56px;height:56px;padding:0;
+  #more{position:fixed;left:18px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:9;min-width:0;width:56px;height:56px;padding:0;
     color:#fff;font-size:26px;line-height:1;opacity:.35;background:rgba(0,0,0,.45);transition:opacity .3s}
   #more:hover,#more.on{opacity:1}
+  #full{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom));white-space:nowrap}
+  @media (max-aspect-ratio: 5/4) and (min-width: 1400px){ #reader #full{right:3vw;bottom:3vh} }
   #count{min-width:130px;text-align:center;font-size:18px;font-variant-numeric:tabular-nums;white-space:nowrap}
   #msg{color:#fff;position:fixed;top:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);padding:8px 18px;border-radius:999px;font-size:18px;opacity:0;transition:opacity .25s;z-index:9;pointer-events:none}
   #msg.show{opacity:1}
@@ -102,7 +104,7 @@
     #count{font-size:28px;min-width:220px}
     #ui{gap:24px;padding-top:24px;padding-bottom:calc(5vh + env(safe-area-inset-bottom))}
     #bar{height:12px}
-    #reader #more{width:84px;height:84px;min-width:0;padding:0;font-size:40px;right:3vw;bottom:3vh}
+    #reader #more{width:84px;height:84px;min-width:0;padding:0;font-size:40px;left:3vw;bottom:3vh}
     #ptitle{font-size:34px}#toc button{height:64px;font-size:24px}
     #grid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
   }
@@ -182,7 +184,7 @@
     <button id="play" aria-label="播放或暫停">❚❚ 暫停</button>
     <button id="next" aria-label="下一頁">▶</button>
     <span id="count"></span>
-    <button id="full" aria-label="全螢幕">⛶</button>
+    <button id="full" aria-label="全螢幕">⛶ 全螢幕</button>
   </div>
   <div id="err">圖片載入失敗，請確認 books 資料夾和 index.html 放在一起。</div>
 </div>
