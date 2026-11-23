@@ -122,12 +122,17 @@
   .th:hover{outline-color:rgba(0,0,0,.35)}
   .th.cur:hover{outline-color:var(--accent)}
   #ptip{padding:0 24px 12px;color:var(--muted);font-size:15px}
-  /* ---- 版本 B：左大右小 ---- */
-  #books{flex-wrap:nowrap;align-items:center;justify-content:center;width:min(100%,1800px);margin-top:28px}
+  /* ---- 版本 B：左大右小（左右兩區同高、上下切齊） ---- */
+  #shelfView h1{font-size:clamp(40px,5.6vw,92px);line-height:1.15}
+  #shelfView .sub{font-size:clamp(22px,2.6vw,42px);margin-top:12px}
+  #books{flex-wrap:nowrap;align-items:flex-start;justify-content:center;width:min(100%,1800px)}
   .item{min-width:0}
-  .item.big .name{font-size:clamp(30px,2.9vw,46px);margin-top:22px}
-  .item.big .desc{font-size:clamp(16px,1.6vw,24px)}
-  .item.big .go{font-size:clamp(24px,2.2vw,34px);padding:16px 52px}
+  .item.big{display:flex;flex-direction:column;height:100%;width:100%}
+  .item.big .name{font-size:clamp(32px,3vw,50px);margin-top:auto;padding-top:18px}
+  .item.big .desc{font-size:clamp(24px,2.4vw,40px);margin-top:8px;color:#4a4a4a;font-weight:600}
+  .item.big .pages{align-self:center}
+  .item.big .go{font-size:clamp(26px,2.4vw,38px);padding:16px 56px;margin-top:14px}
+  #books .item:not(.big) .name{font-size:clamp(20px,1.9vw,30px);margin:14px 0 0}
 </style>
 </head>
 <body>
@@ -239,30 +244,31 @@
   $('full').onclick = function(e){ e.stopPropagation(); toggleFull(); };
 
   /* ---------- 書架 ---------- */
-  function renderShelf(){   // 版本 B：評鑑書在左（超大），其他四本在右（2×2），整頁一個畫面放得下
+  function renderShelf(){   // 版本 B：評鑑書在左、其他四本在右（2×2）；左右兩區同高、上下切齊，整頁一個畫面放得下
     var box = $('books'); box.innerHTML = '';
     var W = innerWidth, H = innerHeight;
     var sv = $('shelfView'), sub = sv.querySelector('.sub');
     var topY = sub.getBoundingClientRect().bottom + sv.scrollTop;          // 標題區底部：書本一定放在它下面，不會蓋到標題
-    var Wc = Math.min(W - 48, 1800), BM = 28;
-    var Hav = Math.max(300, H - topY - BM - 80);                            // 標題以下、底部提示以上可用的高度
-    var TL = 230, TR = 130;                                                  // 左邊書下方文字、右邊書下方文字的高度
-    var gx = Math.round(Math.max(40, Math.min(.03 * W, 80))), gy = 36, colGap = Math.round(Math.max(48, Math.min(.04 * W, 110)));
+    var Wc = Math.min(W - 48, 1800), BM = 30;
+    var Hav = Math.max(320, H - topY - BM - 70);                            // 標題以下、底部提示以上可用的高度
+    var TL = 230, TR = 125;                                                  // 左邊書下方文字、右邊每本書下方文字的高度
+    var gx = Math.round(Math.max(36, Math.min(.025 * W, 64))), gy = 30, colGap = Math.round(Math.max(48, Math.min(.04 * W, 100)));
     var FR = 148 / 210;
-    var wL = Math.min((Hav - TL) * 16 / 9, .6 * Wc);
-    var availR = Wc - wL - colGap;
-    var wR = Math.min((availR - gx) / 2, ((Hav - 2 * TR - gy) / 2) * FR);
-    if (wR < 170){ wL = Math.max(.4 * Wc, Wc - colGap - (2 * 170 + gx)); availR = Wc - wL - colGap; wR = Math.max(120, (availR - gx) / 2); }
+    // 兩區同高 Hb：左邊封面高 = Hb-TL（16:9），右邊每格封面高 = (Hb-2TR-gy)/2（A5）。寬度總和不能超過 Wc。
+    var HbW = (Wc + (16 / 9) * TL + FR * (2 * TR + gy) - colGap - gx) / (16 / 9 + FR);
+    var Hb = Math.max(320, Math.min(Hav, HbW));
+    var wL = Math.round((Hb - TL) * 16 / 9);
+    var wR = Math.round(((Hb - 2 * TR - gy) / 2) * FR);
     box.style.marginTop = BM + 'px'; box.style.columnGap = colGap + 'px';
     var colL = document.createElement('div'), colR = document.createElement('div');
-    colR.className = 'colR'; colR.style.cssText = 'display:grid;grid-template-columns:repeat(2,auto);gap:' + gy + 'px ' + gx + 'px;align-items:start';
+    colL.style.cssText = 'display:flex;flex-direction:column;height:' + Math.round(Hb) + 'px;width:' + wL + 'px';
+    colR.style.cssText = 'display:grid;grid-template-columns:repeat(2,' + wR + 'px);column-gap:' + gx + 'px;align-content:space-between;align-items:start;height:' + Math.round(Hb) + 'px';
     box.appendChild(colL); box.appendChild(colR);
     BOOKS.forEach(function(b){
       var left = b.row === 1, isVid = b.type === 'video';
       var it = document.createElement('a'); it.className = 'item' + (left ? ' big' : ''); it.href = '#' + encodeURIComponent(b.id);
       it.innerHTML = '<div class="cover"><img alt="">' + (isVid ? '<i class="play"></i>' : '') + '</div><div class="name"></div><div class="desc"></div><span class="pages"></span><span class="go">' + (b.goText || (isVid ? '播放影片' : '開始閱讀')) + '</span>';
-      var cr = left ? 16 / 9 : FR;
-      it.querySelector('.cover').style.aspectRatio = cr; it.style.width = Math.round(left ? wL : wR) + 'px';
+      it.querySelector('.cover').style.aspectRatio = left ? 16 / 9 : FR; it.style.width = (left ? wL : wR) + 'px';
       var im = it.querySelector('img'); im.src = (isVid ? (b.cover || b.poster) : (b.cover || ('books/' + b.id + '/pages/p001.jpg'))) + '?v=20261123c'; im.alt = b.title + ' 封面';
       if (!left) it.querySelector('.go').style.display = 'none';
       it.querySelector('.name').textContent = b.title;
