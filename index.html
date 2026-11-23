@@ -122,6 +122,7 @@
   .th:hover{outline-color:rgba(0,0,0,.35)}
   .th.cur:hover{outline-color:var(--accent)}
   #ptip{padding:0 24px 12px;color:var(--muted);font-size:15px}
+  .pages{display:none!important}   /* 不顯示「共 N 頁」「影片 N 分」小標 */
 </style>
 </head>
 <body>
@@ -183,7 +184,7 @@
   <div id="err">圖片載入失敗，請確認 books 資料夾和 index.html 放在一起。</div>
 </div>
 
-<script src="books.js?v=20261123k"></script>
+<script src="books.js?v=20261123m"></script>
 <script>
 (function(){
   var q = new URLSearchParams(location.search);
@@ -248,7 +249,7 @@
     Object.keys(rs).forEach(function(r){ fitW = Math.min(fitW, (maxW - (rs[r].n - 1) * GAP - 4) / rs[r].f); });
     var w0 = Math.min(0.22 * W, 0.34 * H, 380);
     var nRows = Object.keys(rs).length;
-    if (nRows > 1) w0 = Math.min(w0, Math.max(240, .708 * ((H - 330 - 340) / (1 + S1))));   // 兩排盡量一個畫面放下（最小仍保持夠大）
+    if (nRows > 1) w0 = Math.min(w0, Math.max(240, .708 * ((H - 330 - 300) / (1 + S1))));   // 兩排盡量一個畫面放下（最小仍保持夠大）
     box.style.setProperty('--w', Math.max(120, Math.min(w0, fitW)) + 'px');
     var lastRow = 1;
     BOOKS.forEach(function(b){
