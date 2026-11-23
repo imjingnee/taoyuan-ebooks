@@ -59,9 +59,9 @@ window.BOOKS = [
     type: 'video',
     title: '校園米其林美食爭霸賽',
     subtitle: '活動影片',
-    duration: '5 分 41 秒',
-    src: 'media/michelin.mp4',
-    poster: 'media/michelin-poster.jpg',
+    duration: '9 分 23 秒',
+    src: 'media/michelin-v2.mp4',
+    poster: 'media/michelin-poster-v2.jpg',
     cover: 'media/michelin-cover.jpg',
     coverRatio: 148 / 210
   },
