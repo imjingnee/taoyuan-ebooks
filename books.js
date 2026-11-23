@@ -5,6 +5,7 @@ window.SITE = { title: '桃園好食光・營養升級全照顧', subtitle: '吃
 window.BOOKS = [
   {
     id: 'review',
+    goText: '開始匯報',
     row: 1,
     title: '午餐輔導團評鑑書',
     subtitle: '桃園市午餐輔導團亮點活動',
