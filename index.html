@@ -28,6 +28,8 @@
     padding:clamp(16px,3vh,40px) 24px;-webkit-overflow-scrolling:touch}
   #shelfView h1{font-size:clamp(30px,4.2vw,56px);letter-spacing:.08em;text-align:center}
   .sub{margin-top:10px;font-size:clamp(16px,1.8vw,24px);color:var(--muted);text-align:center}
+  .notice{font-size:15px;color:rgba(0,0,0,.5);text-align:center;letter-spacing:.06em}
+  #shelfView .notice{margin-top:14px;padding-bottom:6px}
   /* 空白背景：書平放在畫面上，書名貼在下方 */
   #books{--w:240px;margin-top:clamp(20px,3vh,40px);width:min(100%,1600px);display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:48px 56px}
   .item{width:var(--w);min-width:176px;display:block;color:inherit;text-decoration:none;outline:none;cursor:pointer;text-align:center;transition:transform .25s}
@@ -133,6 +135,7 @@
   <p class="sub">點選一本書開始閱讀，書頁會自動翻動</p>
   <div id="books"></div>
   <p class="tip">看書時：點左右翻頁、點中間暫停、☰ 目錄可跳頁、⌂ 書架可換別本書</p>
+  <p class="notice"></p>
   <button id="sfull" aria-label="全螢幕">⛶ 全螢幕</button>
 </div>
 
@@ -269,6 +272,7 @@
   }
   (function(){ var S = window.SITE || {}; if (S.title){ document.querySelector('#shelfView h1').textContent = S.title; document.title = S.title; }
     if (typeof S.subtitle === 'string') document.querySelector('#shelfView .sub').textContent = S.subtitle; })();
+  (function(){ var n = (window.SITE && window.SITE.notice) || ''; Array.prototype.forEach.call(document.querySelectorAll('.notice'), function(e){ e.textContent = n; e.style.display = n ? '' : 'none'; }); })();
   renderShelf();
   var rsT = 0; addEventListener('resize', function(){ clearTimeout(rsT); rsT = setTimeout(renderShelf, 150); });
 
