@@ -181,7 +181,7 @@
   <div id="err">圖片載入失敗，請確認 books 資料夾和 index.html 放在一起。</div>
 </div>
 
-<script src="books.js"></script>
+<script src="books.js?v=20261123c"></script>
 <script>
 (function(){
   var q = new URLSearchParams(location.search);
@@ -244,7 +244,7 @@
       it.innerHTML = '<div class="cover"><img alt="">' + (isVid ? '<i class="play"></i>' : '') + '</div><div class="name"></div><div class="desc"></div><span class="pages"></span><span class="go">' + (isVid ? '播放影片' : '開始閱讀') + '</span>';
       var cr = isVid ? (b.coverRatio || 16 / 9) : (b.coverRatio || b.ratio);
       it.querySelector('.cover').style.aspectRatio = cr; it.style.width = 'calc(var(--w) * ' + fac(b) + ')';   // 每本書封面等高
-      var im = it.querySelector('img'); im.src = isVid ? (b.cover || b.poster) : (b.cover || ('books/' + b.id + '/pages/p001.jpg')); im.alt = b.title + ' 封面';
+      var im = it.querySelector('img'); im.src = (isVid ? (b.cover || b.poster) : (b.cover || ('books/' + b.id + '/pages/p001.jpg'))) + '?v=20261123c'; im.alt = b.title + ' 封面';
       it.querySelector('.name').textContent = b.title;
       it.querySelector('.desc').textContent = b.subtitle || '';
       it.querySelector('.pages').textContent = isVid ? ('影片 ' + (b.duration || '')) : ('共 ' + b.pages + ' 頁');
