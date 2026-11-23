@@ -42,15 +42,16 @@ window.BOOKS = [
     id: 'lunch',
     title: '健康好餐x食在安心',
     subtitle: '',
-    pages: 83,
+    pages: 82,
+    single: true,           // 橫式簡報：書攤開但只顯示右邊一頁
     cover: 'books/lunch/cover.jpg',
     coverRatio: 148 / 210,
     ratio: 16 / 9,
     toc: [
       { t: '封面', p: 1 },
-      { t: '食在安心成果簡報', p: 3 },
-      { t: '南勢國小 健康好餐', p: 11 },
-      { t: '社子國小 健康好餐', p: 58 }
+      { t: '食在安心成果簡報', p: 2 },
+      { t: '南勢國小 健康好餐', p: 10 },
+      { t: '社子國小 健康好餐', p: 57 }
     ]
   },
   {

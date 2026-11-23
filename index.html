@@ -398,7 +398,6 @@
     if (busy || !active) return;
     var t = s + dir;
     if (t < 0 || t >= S){ return wrap(t < 0 ? S - 1 : 0); }
-    if (SINGLE){ return wrap(t); }      // 橫式簡報：淡出淡入換頁
     busy = true; var g = gen;
     var cur = pagesOf(s), nxt = pagesOf(t);
     var underNext = dir > 0 ? nxt.r : nxt.l;           // 翻開後露出的那一頁
