@@ -88,8 +88,8 @@ window.BOOKS = [
     title: '校園米其林美食爭霸賽',
     subtitle: '',
     duration: '9 分 23 秒',
-    src: 'media/michelin-v2.mp4',
-    poster: 'media/michelin-poster-v2.jpg',
+    src: 'media/michelin-v3.mp4',
+    poster: 'media/michelin-poster-v3.jpg',
     cover: 'media/michelin-cover.jpg',
     coverRatio: 148 / 210
   }
