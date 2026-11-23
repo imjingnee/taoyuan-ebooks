@@ -18,6 +18,8 @@
   html,body{height:100%;overflow:hidden;color:var(--fg);font-family:-apple-system,"PingFang TC","Noto Sans TC",sans-serif;
     background:var(--bg);touch-action:manipulation}
   body.idle{cursor:none}
+  body.kiosk,body.kiosk *{cursor:none!important}
+  html.kiosk{touch-action:none;overscroll-behavior:none}
   button{font:inherit;color:var(--fg);background:var(--btn);border:0;border-radius:999px;min-width:56px;height:48px;padding:0 20px;font-size:18px;white-space:nowrap;flex:0 0 auto}
   button:active{background:var(--btn-on)}
 
@@ -181,7 +183,7 @@
   <div id="err">圖片載入失敗，請確認 books 資料夾和 index.html 放在一起。</div>
 </div>
 
-<script src="books.js?v=20261123e"></script>
+<script src="books.js?v=20261123f"></script>
 <script>
 (function(){
   var q = new URLSearchParams(location.search);
@@ -189,6 +191,12 @@
   var SECONDS = 3;            // 每次翻頁後停留秒數（也可用網址 ?sec=5 臨時改）
   var FLIP_MS = 1100;         // 翻頁動畫時間（要和 CSS --flip 一致）
   /* ======================== */
+  var KIOSK = q.has('kiosk');   // 網址加 ?kiosk 進入展示模式：影片全螢幕循環播放、沒有返回鍵與控制列、被暫停會自動繼續
+  if (KIOSK){
+    document.documentElement.classList.add('kiosk');
+    ['contextmenu','dragstart','selectstart'].forEach(function(t){ addEventListener(t, function(e){ e.preventDefault(); }); });
+    addEventListener('keydown', function(e){ if (e.key !== 'F11' && e.key !== 'F5') e.preventDefault(); }, true);
+  }
   if (q.get('sec')) SECONDS = Math.max(1, parseFloat(q.get('sec')) || SECONDS);
   if (q.get('flip')) FLIP_MS = Math.max(300, parseFloat(q.get('flip')) || FLIP_MS);   // ?flip=1500 可改翻頁速度
   document.documentElement.style.setProperty('--flip', FLIP_MS + 'ms');
@@ -260,6 +268,10 @@
   function route(){
     var id = decodeURIComponent(location.hash.replace(/^#/, ''));
     var b = BOOKS.filter(function(x){ return x.id === id; })[0];
+    if (KIOSK && !(b && b.type === 'video')){   // 展示模式：永遠回到影片，不讓人離開
+      var kv = BOOKS.filter(function(x){ return x.type === 'video'; })[0];
+      if (kv){ location.hash = '#' + encodeURIComponent(kv.id); return; }
+    }
     if (b && b.type === 'video'){ if (active) closeBook(); openVideo(b); return; }
     closeVideo();
     if (b){ if (!active || !BOOK || BOOK.id !== b.id) openBook(b); }
@@ -272,6 +284,7 @@
     shelfView.style.display = 'none'; vv.style.display = 'block';
     vid.poster = b.poster || ''; vid.src = b.src;
     document.title = b.title;
+    if (KIOSK){ vid.controls = false; $('vback').style.display = 'none'; document.body.classList.add('kiosk'); }
     vid.loop = (b.loop !== false);   // 輪播：播完自動從頭再播（books.js 該影片設 loop: false 可關閉）
     vid.muted = false;
     try { var p = vid.play(); if (p && p.catch) p.catch(function(){ vid.muted = true; try { vid.play(); } catch (e) {} }); } catch (e) {}   // 瀏覽器擋有聲自動播放時，改靜音照樣輪播
@@ -285,6 +298,17 @@
     document.title = (window.SITE && window.SITE.title) || '電子書架';
   }
   $('vback').onclick = function(){ location.hash = ''; };
+  if (KIOSK){
+    var kick = function(){ if (videoOn && vid.paused){ try { var p = vid.play(); if (p && p.catch) p.catch(function(){ vid.muted = true; try { vid.play(); } catch (e) {} }); } catch (e) {} } };
+    vid.addEventListener('pause', function(){ setTimeout(kick, 300); });
+    vid.addEventListener('ended', function(){ try { vid.currentTime = 0; } catch (e) {} kick(); });
+    var fails = 0;
+    vid.addEventListener('error', function(){ if (!videoOn) return; setTimeout(function(){ var s = vid.src; vid.src = ''; vid.src = s; kick(); }, Math.min(30000, 3000 * (++fails))); });
+    vid.addEventListener('playing', function(){ fails = 0; });
+    setInterval(kick, 5000);
+    var wl = null; function keepAwake(){ try { if (navigator.wakeLock) navigator.wakeLock.request('screen').then(function(l){ wl = l; }).catch(function(){}); } catch (e) {} }
+    keepAwake(); document.addEventListener('visibilitychange', function(){ if (!document.hidden){ keepAwake(); kick(); } });
+  }
   addEventListener('hashchange', route);
 
   /* ---------- 工具 ---------- */
