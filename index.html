@@ -183,7 +183,7 @@
   <div id="err">圖片載入失敗，請確認 books 資料夾和 index.html 放在一起。</div>
 </div>
 
-<script src="books.js?v=20261123f"></script>
+<script src="books.js?v=20261123g"></script>
 <script>
 (function(){
   var q = new URLSearchParams(location.search);
@@ -239,11 +239,13 @@
     function fac(b){ return b.type === 'video' ? (b.coverRatio ? b.coverRatio / .708 : 1.6) : (b.coverRatio || b.ratio) / .708; }   // 各項目寬度相對於「--w」的倍數（封面等高）
     var rowOf = function(b){ return b.row || 1; };
     var nRows = 1; BOOKS.forEach(function(b){ nRows = Math.max(nRows, rowOf(b)); });
-    var sumF = 0, cnt = 0; BOOKS.forEach(function(b){ if (rowOf(b) === 1){ sumF += fac(b); cnt++; } });
-    var availW = Math.min(W - 48, 1400) - (cnt - 1) * 56 - 4;
+    var rs = {};   // 每一排的寬度總和與本數，用最擠的那一排決定封面大小
+    BOOKS.forEach(function(b){ var r = rowOf(b); rs[r] = rs[r] || {f: 0, n: 0}; rs[r].f += fac(b); rs[r].n++; });
+    var maxW = Math.min(W - 48, 1400), fitW = 1e9;
+    Object.keys(rs).forEach(function(r){ fitW = Math.min(fitW, (maxW - (rs[r].n - 1) * 56 - 4) / rs[r].f); });
     var w0 = Math.min(0.22 * W, 0.34 * H, 380);
     if (nRows > 1) w0 = Math.min(w0, Math.max(170, .708 * ((H - 308) / nRows - 200)));   // 多排時縮小封面，盡量一個畫面放下
-    box.style.setProperty('--w', Math.max(120, Math.min(w0, availW / sumF)) + 'px');
+    box.style.setProperty('--w', Math.max(120, Math.min(w0, fitW)) + 'px');
     var lastRow = 1;
     BOOKS.forEach(function(b){
       if (rowOf(b) !== lastRow){ lastRow = rowOf(b); var br = document.createElement('span'); br.style.cssText = 'flex:0 0 100%;height:0;margin-top:-48px'; box.appendChild(br); }

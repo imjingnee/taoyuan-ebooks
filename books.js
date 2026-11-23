@@ -4,7 +4,30 @@ window.SITE = { title: '桃園好食光・營養升級全照顧', subtitle: '吃
 
 window.BOOKS = [
   {
+    id: 'review',
+    row: 1,
+    title: '午餐輔導團評鑑書',
+    subtitle: '桃園市午餐輔導團亮點活動',
+    pages: 11,
+    single: true,           // 橫式簡報：書攤開但只顯示右邊一頁
+    ratio: 16 / 9,
+    toc: [
+      { t: '封面', p: 1 },
+      { t: '營養升級看得見', p: 2 },
+      { t: '生生喝鮮乳・桃園鈣健康', p: 3 },
+      { t: '校園米其林美食爭霸賽', p: 4 },
+      { t: '友善環境健康好餐', p: 5 },
+      { t: '「食」在安心・食農共學', p: 6 },
+      { t: '一口桃滋味', p: 7 },
+      { t: '繽紛蔬樂盒', p: 8 },
+      { t: '校園食農教育成果展', p: 9 },
+      { t: '午餐教育工作研習及參訪', p: 10 },
+      { t: '食育力五星城市', p: 11 }
+    ]
+  },
+  {
     id: 'peach',
+    row: 2,
     title: '一口桃滋味',
     subtitle: '營養午餐亮點食譜',
     pages: 178,
@@ -14,6 +37,7 @@ window.BOOKS = [
   },
   {
     id: 'milk',
+    row: 2,
     title: '生生喝鮮乳',
     subtitle: '桃園鈣健康・憑卡免費換',
     pages: 24,
@@ -40,6 +64,7 @@ window.BOOKS = [
   },
   {
     id: 'lunch',
+    row: 2,
     title: '健康好餐x食在安心',
     subtitle: '',
     pages: 82,
@@ -56,6 +81,7 @@ window.BOOKS = [
   },
   {
     id: 'video',
+    row: 2,
     type: 'video',
     title: '校園米其林美食爭霸賽',
     subtitle: '活動影片',
@@ -64,27 +90,6 @@ window.BOOKS = [
     poster: 'media/michelin-poster-v2.jpg',
     cover: 'media/michelin-cover.jpg',
     coverRatio: 148 / 210
-  },
-  {
-    id: 'review',
-    row: 2,
-    title: '午餐輔導團評鑑書',
-    subtitle: '桃園市午餐輔導團亮點活動',
-    pages: 11,
-    single: true,           // 橫式簡報：書攤開但只顯示右邊一頁
-    ratio: 16 / 9,
-    toc: [
-      { t: '封面', p: 1 },
-      { t: '營養升級看得見', p: 2 },
-      { t: '生生喝鮮乳・桃園鈣健康', p: 3 },
-      { t: '校園米其林美食爭霸賽', p: 4 },
-      { t: '友善環境健康好餐', p: 5 },
-      { t: '「食」在安心・食農共學', p: 6 },
-      { t: '一口桃滋味', p: 7 },
-      { t: '繽紛蔬樂盒', p: 8 },
-      { t: '校園食農教育成果展', p: 9 },
-      { t: '午餐教育工作研習及參訪', p: 10 },
-      { t: '食育力五星城市', p: 11 }
-    ]
   }
 ];
+
