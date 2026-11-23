@@ -184,7 +184,7 @@
   <div id="err">圖片載入失敗，請確認 books 資料夾和 index.html 放在一起。</div>
 </div>
 
-<script src="books.js?v=20261123m"></script>
+<script src="books.js?v=20261123n"></script>
 <script>
 (function(){
   var q = new URLSearchParams(location.search);
@@ -483,9 +483,13 @@
 
   function check(now){
     if (active && playing && !busy && !modal){
-      var p = (now - t0) / (SECONDS * 1000);
+      var p = (now - t0) / dwell();
       if (p >= 1) flip(1); else fill.style.width = (p * 100) + '%';
     }
+  }
+  function dwell(){   // 這一頁停留幾毫秒：書有逐頁秒數 secs 就照它，否則用統一的 SECONDS
+    var a = (BOOK && BOOK.secs && SINGLE) ? BOOK.secs[s] : 0;   // 有逐頁秒數的書，優先於網址的 ?sec=
+    return (a > 0 ? a : SECONDS) * 1000;
   }
   function tick(now){ check(now); requestAnimationFrame(tick); }
   setInterval(function(){ check(performance.now()); }, 200);   // 備援：畫面計時被節流時，仍會自動翻頁
