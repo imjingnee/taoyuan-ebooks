@@ -87,6 +87,14 @@
     color:#fff;font-size:26px;line-height:1;opacity:.35;background:rgba(0,0,0,.45);transition:opacity .3s}
   #more:hover,#more.on{opacity:1}
   #full{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom));white-space:nowrap}
+  /* 27 吋橫式大螢幕：按鈕放大，手指好點 */
+  @media (min-width:1800px) and (min-aspect-ratio: 3/2){
+    #reader button{height:72px;min-width:84px;padding:0 28px;font-size:26px}
+    #count{font-size:26px;min-width:190px}
+    #ui{gap:20px;padding-bottom:calc(26px + env(safe-area-inset-bottom))}
+    #reader #more{width:80px;height:80px;font-size:38px;left:28px;bottom:26px}
+    #reader #full{right:28px;bottom:26px}
+  }
   @media (max-aspect-ratio: 5/4) and (min-width: 1400px){ #reader #full{right:3vw;bottom:3vh} }
   #count{min-width:130px;text-align:center;font-size:18px;font-variant-numeric:tabular-nums;white-space:nowrap}
   #msg{color:#fff;position:fixed;top:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);padding:8px 18px;border-radius:999px;font-size:18px;opacity:0;transition:opacity .25s;z-index:9;pointer-events:none}
