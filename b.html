@@ -406,7 +406,7 @@
   function toast(t){ msg.textContent = t; msg.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(function(){ msg.classList.remove('show'); }, 900); }
 
   /* ---------- 旁白（書有 audio 與 cues 時：換頁跟著聲音走） ---------- */
-  var aud = new Audio(); aud.preload = 'auto';
+  var aud = new Audio(); aud.preload = 'auto'; window.AUD = aud;   // window.AUD 方便除錯
   var LEAD = 0.9;             // 翻頁動畫約 1.9 秒，提早一點開始翻，讓新頁在該講的時候剛好翻到
   function audMode(){ return !!(BOOK && BOOK.audio && BOOK.cues && SINGLE && !aud.paused); }
   function cueAt(t){ var c = BOOK.cues, k = 0; for (var i = 0; i < c.length; i++){ if (t + LEAD >= c[i]) k = i; } return k; }
