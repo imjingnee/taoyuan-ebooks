@@ -9,6 +9,7 @@ window.BOOKS = [
     subtitle: '營養午餐亮點食譜',
     pages: 178,
     ratio: 515.906 / 728.504,
+    coverRatio: 148 / 210,
     toc: []
   },
   {
@@ -17,6 +18,7 @@ window.BOOKS = [
     subtitle: '桃園鈣健康・憑卡免費換',
     pages: 24,
     ratio: 419.528 / 595.276,
+    coverRatio: 148 / 210,
     toc: [
       { t: '目錄', p: 2 },
       { t: '實施方式', p: 3 },
@@ -42,7 +44,7 @@ window.BOOKS = [
     subtitle: '',
     pages: 83,
     cover: 'books/lunch/cover.jpg',
-    coverRatio: 9 / 16,
+    coverRatio: 148 / 210,
     ratio: 16 / 9,
     toc: [
       { t: '封面', p: 1 },
@@ -52,7 +54,19 @@ window.BOOKS = [
     ]
   },
   {
+    id: 'video',
+    type: 'video',
+    title: '校園米其林美食爭霸賽',
+    subtitle: '活動影片',
+    duration: '5 分 41 秒',
+    src: 'media/michelin.mp4',
+    poster: 'media/michelin-poster.jpg',
+    cover: 'media/michelin-cover.jpg',
+    coverRatio: 148 / 210
+  },
+  {
     id: 'review',
+    row: 2,
     title: '午餐輔導團評鑑書',
     subtitle: '桃園市午餐輔導團亮點活動',
     pages: 11,
@@ -70,16 +84,5 @@ window.BOOKS = [
       { t: '午餐教育工作研習及參訪', p: 10 },
       { t: '食育力五星城市', p: 11 }
     ]
-  },
-  {
-    id: 'video',
-    type: 'video',
-    title: '校園米其林美食爭霸賽',
-    subtitle: '活動影片',
-    duration: '5 分 41 秒',
-    src: 'media/michelin.mp4',
-    poster: 'media/michelin-poster.jpg',
-    cover: 'media/michelin-cover.jpg',
-    coverRatio: 9 / 16
   }
 ];
