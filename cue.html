@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>換頁校時工具</title>
+<style>
+  :root{--bg:#f4f3ef;--card:#fff;--ink:#222;--mut:#777;--acc:#e8862f;--line:#ddd}
+  @media (prefers-color-scheme:dark){:root{--bg:#1d1d1f;--card:#2a2a2d;--ink:#f1f1f1;--mut:#aaa;--line:#444}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 -apple-system,"PingFang TC","Noto Sans TC",sans-serif}
+  .wrap{max-width:1200px;margin:0 auto;padding:16px}
+  h1{font-size:22px;margin:4px 0 2px}
+  p.hint{margin:0 0 12px;color:var(--mut)}
+  .grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:16px}
+  @media (max-width:860px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+  #slide{width:100%;aspect-ratio:16/9;object-fit:contain;background:#000;border-radius:10px;display:block}
+  .bar{height:10px;background:var(--line);border-radius:6px;margin:12px 0 4px;position:relative;cursor:pointer}
+  .bar i{position:absolute;left:0;top:0;bottom:0;background:var(--acc);border-radius:6px}
+  .bar b{position:absolute;top:-3px;width:2px;height:16px;background:var(--ink);opacity:.5}
+  .time{display:flex;justify-content:space-between;color:var(--mut);font-variant-numeric:tabular-nums;font-size:14px}
+  .btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  button{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:8px 14px;cursor:pointer}
+  button.pri{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:700}
+  button:active{transform:scale(.97)}
+  #mark{flex:1 1 100%;font-size:20px;padding:14px}
+  table{width:100%;border-collapse:collapse}
+  td{padding:5px 4px;border-bottom:1px solid var(--line);vertical-align:middle}
+  tr.cur{background:rgba(232,134,47,.16)}
+  td.n{width:26px;color:var(--mut);text-align:right}
+  td.t{font-size:14px}
+  input{width:78px;font:inherit;padding:5px 6px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);text-align:right}
+  td button{padding:4px 9px;font-size:14px}
+  textarea{width:100%;height:84px;font:13px/1.4 ui-monospace,Menlo,monospace;border:1px solid var(--line);border-radius:10px;padding:8px;background:var(--bg);color:var(--ink)}
+  .ok{color:#2a9d4a;font-size:14px;min-height:20px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>換頁校時工具</h1>
+  <p class="hint">按「播放」聽旁白，<b>旁白剛開始講下一頁的那一刻</b>，按一次大按鈕（或鍵盤 N）。全部標完，把下方的數字複製給我就好。也可以直接改表格裡的秒數。</p>
+  <div class="grid">
+    <div class="card">
+      <img id="slide" alt="">
+      <div class="bar" id="bar"><i id="fill"></i></div>
+      <div class="time"><span id="now">0:00.0</span><span id="pg"></span><span id="dur">0:00.0</span></div>
+      <div class="btns">
+        <button class="pri" id="play">▶ 播放</button>
+        <button id="b5">⏪ 5 秒</button><button id="b1">◀ 1 秒</button>
+        <button id="f1">1 秒 ▶</button><button id="f5">5 秒 ⏩</button>
+        <button id="rate">速度 1×</button>
+        <button id="mark" class="pri">▶▶ 下一頁開始了（N）</button>
+      </div>
+    </div>
+    <div class="card">
+      <table id="tb"></table>
+      <div class="btns"><button id="reset">重設為目前設定</button><button id="copy" class="pri">複製換頁時間</button></div>
+      <p class="ok" id="ok"></p>
+      <textarea id="out" readonly></textarea>
+    </div>
+  </div>
+</div>
+<audio id="aud" preload="auto"></audio>
+<script src="books.js?v=cue1"></script>
+<script>
+(function(){
+  var $=function(i){return document.getElementById(i)};
+  var B=(window.BOOKS||[]).filter(function(b){return b.id==='review'})[0];
+  var aud=$('aud'); aud.src=B.audio;
+  var N=B.pages, orig=B.cues.slice(), cues, marking=0;
+  try{ var sv=JSON.parse(localStorage.getItem('cues_v1')); if(sv&&sv.length===N) cues=sv; }catch(e){}
+  if(!cues) cues=orig.slice();
+  function save(){ try{localStorage.setItem('cues_v1',JSON.stringify(cues))}catch(e){} }
+  function fmt(t){ var m=Math.floor(t/60), s=t-m*60; return m+':'+(s<10?'0':'')+s.toFixed(1); }
+  function pad(n){ return ('00'+n).slice(-3); }
+  function pageAt(t){ var k=0; for(var i=0;i<N;i++) if(t>=cues[i]-0.001) k=i; return k; }
+  var tb=$('tb'), inputs=[], rows=[];
+  B.toc.forEach(function(it,i){
+    var tr=document.createElement('tr'); rows.push(tr);
+    var inp=document.createElement('input'); inp.type='number'; inp.step='0.1'; inputs.push(inp);
+    inp.onchange=function(){ var v=parseFloat(inp.value); if(isNaN(v)) v=cues[i]; cues[i]=Math.max(0,Math.round(v*10)/10); if(i===0) cues[0]=0; render(); };
+    tr.innerHTML='<td class="n">'+(i+1)+'</td><td class="t">'+it.t+'</td><td></td><td></td>';
+    tr.children[2].appendChild(inp);
+    var bs=document.createElement('button'); bs.textContent='設為現在'; bs.onclick=function(){ if(i>0){cues[i]=Math.round(aud.currentTime*10)/10; render();} };
+    var bp=document.createElement('button'); bp.textContent='▶ 從這播'; bp.onclick=function(){ aud.currentTime=Math.max(0,cues[i]-0.5); aud.play(); };
+    tr.children[3].appendChild(bs); tr.children[3].appendChild(bp);
+    tb.appendChild(tr);
+  });
+  function render(){
+    for(var i=1;i<N;i++) if(cues[i]<cues[i-1]) cues[i]=cues[i-1];
+    inputs.forEach(function(x,i){ x.value=cues[i].toFixed(1); });
+    $('out').value='cues: ['+cues.map(function(x){return +x.toFixed(1)}).join(', ')+'],';
+    var d=aud.duration||0; document.querySelectorAll('.bar b').forEach(function(e){e.remove()});
+    if(d) cues.forEach(function(c,i){ if(i>0){var m=document.createElement('b'); m.style.left=(c/d*100)+'%'; $('bar').appendChild(m);} });
+    save(); show();
+  }
+  var last=-1;
+  function show(){
+    var t=aud.currentTime, d=aud.duration||0, k=pageAt(t);
+    $('now').textContent=fmt(t); $('dur').textContent=d?fmt(d):'';
+    $('pg').textContent='第 '+(k+1)+' / '+N+' 頁';
+    $('fill').style.width=(d?t/d*100:0)+'%';
+    if(k!==last){ last=k; $('slide').src='books/review/pages/p'+pad(k+1)+'.jpg';
+      rows.forEach(function(r,i){ r.className=(i===k?'cur':''); }); }
+  }
+  (function loop(){ show(); requestAnimationFrame(loop); })();
+  aud.addEventListener('loadedmetadata',render);
+  $('play').onclick=function(){ if(aud.paused) aud.play(); else aud.pause(); };
+  aud.addEventListener('play',function(){ $('play').textContent='❚❚ 暫停'; });
+  aud.addEventListener('pause',function(){ $('play').textContent='▶ 播放'; });
+  function seek(dt){ aud.currentTime=Math.max(0,Math.min((aud.duration||1e9),aud.currentTime+dt)); }
+  $('b5').onclick=function(){seek(-5)}; $('b1').onclick=function(){seek(-1)};
+  $('f1').onclick=function(){seek(1)}; $('f5').onclick=function(){seek(5)};
+  var rates=[1,.75,.5,1.25], ri=0;
+  $('rate').onclick=function(){ ri=(ri+1)%rates.length; aud.playbackRate=rates[ri]; $('rate').textContent='速度 '+rates[ri]+'×'; };
+  $('bar').onclick=function(e){ var r=$('bar').getBoundingClientRect(); aud.currentTime=(e.clientX-r.left)/r.width*(aud.duration||0); };
+  function mark(){
+    var k=pageAt(aud.currentTime)+1;            // 目前這頁的下一頁
+    if(k>=N){ $('ok').textContent='已經是最後一頁了'; return; }
+    cues[k]=Math.round(aud.currentTime*10)/10; render();
+    $('ok').textContent='第 '+(k+1)+' 頁從 '+fmt(cues[k])+' 開始';
+  }
+  $('mark').onclick=mark;
+  document.addEventListener('keydown',function(e){
+    if(e.target.tagName==='INPUT') return;
+    if(e.key==='n'||e.key==='N'||e.key==='Enter'){ e.preventDefault(); mark(); }
+    else if(e.key===' '){ e.preventDefault(); $('play').click(); }
+    else if(e.key==='ArrowLeft') seek(-1); else if(e.key==='ArrowRight') seek(1);
+  });
+  $('reset').onclick=function(){ cues=orig.slice(); render(); $('ok').textContent='已重設'; };
+  $('copy').onclick=function(){ var t=$('out').value; (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(function(){$('ok').textContent='已複製，貼給我就好'},function(){$('out').select();document.execCommand('copy');$('ok').textContent='已複製'}); };
+  render();
+})();
+</script>
+</body>
+</html>
