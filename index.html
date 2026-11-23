@@ -86,7 +86,8 @@
   #more{position:fixed;left:18px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:9;min-width:0;width:56px;height:56px;padding:0;
     color:#fff;font-size:26px;line-height:1;opacity:.35;background:rgba(0,0,0,.45);transition:opacity .3s}
   #more:hover,#more.on{opacity:1}
-  #full{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom));white-space:nowrap}
+  #full{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:9;white-space:nowrap;color:#fff;background:rgba(0,0,0,.45);opacity:.35;transition:opacity .3s}
+  #full:hover{opacity:1}
   /* 27 吋橫式大螢幕：按鈕放大，手指好點 */
   @media (min-width:1800px) and (min-aspect-ratio: 3/2){
     #reader button{height:72px;min-width:84px;padding:0 28px;font-size:26px}
@@ -185,6 +186,7 @@
     </div>
   </div>
   <button id="more" aria-label="顯示或隱藏工具列">⋯</button>
+  <button id="full" aria-label="全螢幕">⛶ 全螢幕</button>
   <div id="ui">
     <button id="shelf" aria-label="回到書架">⌂ 書架</button>
     <button id="menu" aria-label="開啟目錄">☰ 目錄</button>
@@ -192,7 +194,6 @@
     <button id="play" aria-label="播放或暫停">❚❚ 暫停</button>
     <button id="next" aria-label="下一頁">▶</button>
     <span id="count"></span>
-    <button id="full" aria-label="全螢幕">⛶ 全螢幕</button>
   </div>
   <div id="err">圖片載入失敗，請確認 books 資料夾和 index.html 放在一起。</div>
 </div>
