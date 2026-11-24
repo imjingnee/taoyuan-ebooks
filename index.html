@@ -527,6 +527,9 @@
     }
     if (active && playing && !busy && !modal){
       var p = (now - t0) / dwell();
+      if (p >= 1 && BOOK && BOOK.holdEnd && s >= S - 1){      // 最後一頁停留完：停住不再翻回第 1 頁（沒有聲音的備援換頁也一樣）
+        finished = true; playing = false; playBtn.textContent = '▶ 重播'; fill.style.width = '100%'; aud.pause(); return;
+      }
       if (p >= 1) flip(1); else fill.style.width = (p * 100) + '%';
     }
   }
